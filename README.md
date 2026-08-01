@@ -2,6 +2,9 @@
 
 面向厨房、卫浴方案设计的 2D / 3D WebGL 工具，包含本地方案库、PBR 材质、已验收真实模型、渐进式高清预览和 Android 壳应用。
 
+- 在线体验：https://shi3435254161-lgtm.github.io/empty/
+- Android 安装包：https://github.com/shi3435254161-lgtm/empty/releases/tag/v1.1.0
+
 ## 本地运行
 
 ```powershell
