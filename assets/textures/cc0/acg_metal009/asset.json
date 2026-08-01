@@ -1,0 +1,58 @@
+{
+  "materialId": "acg-metal009",
+  "assetId": "Metal009",
+  "name": "拉丝不锈钢",
+  "sourceUrl": "https://ambientcg.com/a/Metal009",
+  "provider": "ambientCG",
+  "license": "CC0 1.0 Universal",
+  "licenseUrl": "https://ambientcg.com/license",
+  "resolution": "1K-JPG",
+  "roles": [
+    "countertop",
+    "metal"
+  ],
+  "tags": [
+    "9",
+    "brushed",
+    "bumpy",
+    "metal",
+    "scratches",
+    "silver",
+    "steel"
+  ],
+  "archive": {
+    "file": "Metal009_1K-JPG.zip",
+    "bytes": 4767000,
+    "sha256": "1b1970219b40fe707e7194b28702f1a65b0d227bbea56da69dfbc8d8b5cfcb5e"
+  },
+  "maps": {
+    "diffuse": "Metal009_1K-JPG_Color.jpg",
+    "normal": "Metal009_1K-JPG_NormalGL.jpg",
+    "roughness": "Metal009_1K-JPG_Roughness.jpg",
+    "displacement": "Metal009_1K-JPG_Displacement.jpg"
+  },
+  "mapFiles": {
+    "diffuse": {
+      "file": "diffuse.jpg",
+      "bytes": 616678,
+      "sha256": "e066e240ad0eaab6a73fb0f40fa7caa94365160770331babc91de2e8ce6a986f"
+    },
+    "normal": {
+      "file": "normal.jpg",
+      "bytes": 814572,
+      "sha256": "45c7c88685e6b44da7e8d25e2cf6d8645d42209793ccc4354e68c16cdae15d62"
+    },
+    "roughness": {
+      "file": "roughness.jpg",
+      "bytes": 486233,
+      "sha256": "6d06dfe8c240d3b6f33030740110284245bd8aefb2e10e8eb0c563444d9c0c5b"
+    },
+    "displacement": {
+      "file": "displacement.jpg",
+      "bytes": 698868,
+      "sha256": "73095592a8cf4bb983cb2bd2a3bf771492fa9d4697a547f4e3e430d4d871951f"
+    }
+  },
+  "importedAt": "2026-08-01T02:15:18.020Z",
+  "folder": "acg_metal009"
+}

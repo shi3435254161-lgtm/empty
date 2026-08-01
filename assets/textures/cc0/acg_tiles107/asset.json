@@ -1,0 +1,60 @@
+{
+  "materialId": "acg-tiles107",
+  "assetId": "Tiles107",
+  "name": "亮白大板砖",
+  "sourceUrl": "https://ambientcg.com/a/Tiles107",
+  "provider": "ambientCG",
+  "license": "CC0 1.0 Universal",
+  "licenseUrl": "https://ambientcg.com/license",
+  "resolution": "2K-JPG",
+  "roles": [
+    "floor",
+    "wall"
+  ],
+  "tags": [
+    "107",
+    "tiles",
+    "white"
+  ],
+  "archive": {
+    "file": "Tiles107_2K-JPG.zip",
+    "bytes": 6705310,
+    "sha256": "fa76887bb33af0972154700126d1f86d01eaed518341ce7411616c1d1202ac55"
+  },
+  "maps": {
+    "diffuse": "Tiles107_2K-JPG_Color.jpg",
+    "normal": "Tiles107_2K-JPG_NormalGL.jpg",
+    "roughness": "Tiles107_2K-JPG_Roughness.jpg",
+    "displacement": "Tiles107_2K-JPG_Displacement.jpg",
+    "ao": "Tiles107_2K-JPG_AmbientOcclusion.jpg"
+  },
+  "mapFiles": {
+    "diffuse": {
+      "file": "diffuse.jpg",
+      "bytes": 780156,
+      "sha256": "a74664ca3721976b9407d5b1bba65534f616eb2519ae16d76b4ec5f426530bdb"
+    },
+    "normal": {
+      "file": "normal.jpg",
+      "bytes": 1561357,
+      "sha256": "063e5e1ad15fadcf7453a2b6be8cb80d5d88da8aa79068f894a39f1414fef4db"
+    },
+    "roughness": {
+      "file": "roughness.jpg",
+      "bytes": 601206,
+      "sha256": "67cc4cc02b9e5dde932e47b0c3ba6e16b9a0e3847b11f76ea0961641816d9e1d"
+    },
+    "displacement": {
+      "file": "displacement.jpg",
+      "bytes": 700117,
+      "sha256": "b08c0831d62e971e8965df8444af50f2439dc216ea249db42c3bc87582d4561a"
+    },
+    "ao": {
+      "file": "ao.jpg",
+      "bytes": 220471,
+      "sha256": "63b3987f5b78bb6ecc693455ab30e5032bbc09cf98255de75abc5f85f50d3ff4"
+    }
+  },
+  "importedAt": "2026-08-01T01:51:02.867Z",
+  "folder": "acg_tiles107"
+}

@@ -1,0 +1,65 @@
+{
+  "materialId": "acg-wood049",
+  "assetId": "Wood049",
+  "name": "浅橡木",
+  "sourceUrl": "https://ambientcg.com/a/Wood049",
+  "provider": "ambientCG",
+  "license": "CC0 1.0 Universal",
+  "licenseUrl": "https://ambientcg.com/license",
+  "resolution": "1K-JPG",
+  "roles": [
+    "cabinet",
+    "countertop"
+  ],
+  "tags": [
+    "049",
+    "49",
+    "brown",
+    "furniture",
+    "grain",
+    "horizontal",
+    "interior",
+    "modern",
+    "natural",
+    "oak",
+    "plain",
+    "smooth",
+    "wood",
+    "wood049"
+  ],
+  "archive": {
+    "file": "Wood049_1K-JPG.zip",
+    "bytes": 6784006,
+    "sha256": "74ec51bcf5ddfc2e9af6205dc5cbcc90ad51c22117e013ff8b1c7258f8ecbc69"
+  },
+  "maps": {
+    "diffuse": "Wood049_1K-JPG_Color.jpg",
+    "normal": "Wood049_1K-JPG_NormalGL.jpg",
+    "roughness": "Wood049_1K-JPG_Roughness.jpg",
+    "displacement": "Wood049_1K-JPG_Displacement.jpg"
+  },
+  "mapFiles": {
+    "diffuse": {
+      "file": "diffuse.jpg",
+      "bytes": 954756,
+      "sha256": "451ee4dd719628289b4969f75dc583b5f77f8471d5d885ba5015fd90e7e5ce61"
+    },
+    "normal": {
+      "file": "normal.jpg",
+      "bytes": 1559595,
+      "sha256": "e9aaec13f9c6199e7ec440433005a8c52a88332f26a3887fc057179089fb747a"
+    },
+    "roughness": {
+      "file": "roughness.jpg",
+      "bytes": 708949,
+      "sha256": "7683f29e71c24b987e4a7dcc74d5a9ed5ab4cac2e145d507799ba9c9c2c4ef54"
+    },
+    "displacement": {
+      "file": "displacement.jpg",
+      "bytes": 599648,
+      "sha256": "3fcb2a67d00a0fff5171d9a42e720765287a80a76a9e80eaf07405ca6ea1c1a2"
+    }
+  },
+  "importedAt": "2026-08-01T02:18:37.170Z",
+  "folder": "acg_wood049"
+}

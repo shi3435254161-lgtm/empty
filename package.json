@@ -1,0 +1,39 @@
+{
+  "name": "kitchen-designer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sw.js",
+  "scripts": {
+    "dev": "node tools/serve.mjs . 8765",
+    "build:web": "node tools/build-production-web.mjs dist/web",
+    "build:android-web": "node tools/build-production-web.mjs www-mobile",
+    "build:pathtracer": "esbuild ./tools/pathtracer-preview.entry.js --bundle --format=iife --global-name=PathTracerPreviewBundle --outfile=js/vendor/pathtracer-preview.bundle.js --target=es2020",
+    "normalize:assets": "node tools/normalize-assets.mjs",
+    "import:ambientcg": "node tools/ambientcg-import.mjs",
+    "import:local-model": "node tools/import-local-model.mjs",
+    "verify:materials": "node tools/verify-material-assets.mjs",
+    "test": "node --check js/app.js && node --check js/scene3d.js && node --check js/model-assets.js && node --check tools/build-production-web.mjs && node --check tools/serve.mjs && node tools/verify-material-assets.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.4.2",
+    "@gltf-transform/core": "^4.4.2",
+    "@gltf-transform/extensions": "^4.4.2",
+    "@gltf-transform/functions": "^4.4.2",
+    "esbuild": "^0.28.1",
+    "gltfpack": "^1.2.0",
+    "puppeteer": "^25.3.0",
+    "puppeteer-core": "^25.3.0",
+    "three": "^0.185.1",
+    "three-gpu-pathtracer": "^0.0.24",
+    "three-mesh-bvh": "^0.9.13"
+  }
+}

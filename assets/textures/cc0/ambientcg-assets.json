@@ -1,0 +1,307 @@
+{
+  "generatedAt": "2026-08-01T03:11:02.912Z",
+  "provider": "ambientCG",
+  "license": "CC0 1.0 Universal",
+  "assets": [
+    {
+      "materialId": "acg-marble021",
+      "assetId": "Marble021",
+      "name": "冷白细纹石材",
+      "sourceUrl": "https://ambientcg.com/a/Marble021",
+      "provider": "ambientCG",
+      "license": "CC0 1.0 Universal",
+      "licenseUrl": "https://ambientcg.com/license",
+      "resolution": "2K-JPG",
+      "roles": [
+        "floor",
+        "wall",
+        "countertop"
+      ],
+      "tags": [
+        "21",
+        "bright",
+        "marble",
+        "reflective",
+        "shiny",
+        "white"
+      ],
+      "archive": {
+        "file": "Marble021_2K-JPG.zip",
+        "bytes": 11433854,
+        "sha256": "13a661f0d2ade59d43f97f92f5e9a56f06ebafb68d3671daaba2b4adb320ff41"
+      },
+      "maps": {
+        "diffuse": "Marble021_2K-JPG_Color.jpg",
+        "normal": "Marble021_2K-JPG_NormalGL.jpg",
+        "roughness": "Marble021_2K-JPG_Roughness.jpg",
+        "displacement": "Marble021_2K-JPG_Displacement.jpg"
+      },
+      "mapFiles": {
+        "diffuse": {
+          "file": "diffuse.jpg",
+          "bytes": 3687428,
+          "sha256": "8eae10b9fa829a88458a076cff1235da48aa2aaf3ab043535cce59ec5bce1fbf"
+        },
+        "normal": {
+          "file": "normal.jpg",
+          "bytes": 1312696,
+          "sha256": "00ff3e14c44e35dfb05c171355c9b332364a0a94d7026ebd49e33bc8a75aa0bd"
+        },
+        "roughness": {
+          "file": "roughness.jpg",
+          "bytes": 1253588,
+          "sha256": "26287d257dd85cbab6b3828b609ea9df955ce84691d2898514f208cab3492489"
+        },
+        "displacement": {
+          "file": "displacement.jpg",
+          "bytes": 2557500,
+          "sha256": "630116292917654edd5eab5909ee34bd0393e15dc453b5bc65fe598c7f1c1f90"
+        }
+      },
+      "importedAt": "2026-08-01T01:56:34.532Z",
+      "folder": "acg_marble021"
+    },
+    {
+      "materialId": "acg-metal009",
+      "assetId": "Metal009",
+      "name": "拉丝不锈钢",
+      "sourceUrl": "https://ambientcg.com/a/Metal009",
+      "provider": "ambientCG",
+      "license": "CC0 1.0 Universal",
+      "licenseUrl": "https://ambientcg.com/license",
+      "resolution": "1K-JPG",
+      "roles": [
+        "countertop",
+        "metal"
+      ],
+      "tags": [
+        "9",
+        "brushed",
+        "bumpy",
+        "metal",
+        "scratches",
+        "silver",
+        "steel"
+      ],
+      "archive": {
+        "file": "Metal009_1K-JPG.zip",
+        "bytes": 4767000,
+        "sha256": "1b1970219b40fe707e7194b28702f1a65b0d227bbea56da69dfbc8d8b5cfcb5e"
+      },
+      "maps": {
+        "diffuse": "Metal009_1K-JPG_Color.jpg",
+        "normal": "Metal009_1K-JPG_NormalGL.jpg",
+        "roughness": "Metal009_1K-JPG_Roughness.jpg",
+        "displacement": "Metal009_1K-JPG_Displacement.jpg"
+      },
+      "mapFiles": {
+        "diffuse": {
+          "file": "diffuse.jpg",
+          "bytes": 616678,
+          "sha256": "e066e240ad0eaab6a73fb0f40fa7caa94365160770331babc91de2e8ce6a986f"
+        },
+        "normal": {
+          "file": "normal.jpg",
+          "bytes": 814572,
+          "sha256": "45c7c88685e6b44da7e8d25e2cf6d8645d42209793ccc4354e68c16cdae15d62"
+        },
+        "roughness": {
+          "file": "roughness.jpg",
+          "bytes": 486233,
+          "sha256": "6d06dfe8c240d3b6f33030740110284245bd8aefb2e10e8eb0c563444d9c0c5b"
+        },
+        "displacement": {
+          "file": "displacement.jpg",
+          "bytes": 698868,
+          "sha256": "73095592a8cf4bb983cb2bd2a3bf771492fa9d4697a547f4e3e430d4d871951f"
+        }
+      },
+      "importedAt": "2026-08-01T02:15:18.020Z",
+      "folder": "acg_metal009"
+    },
+    {
+      "materialId": "acg-tiles036",
+      "assetId": "Tiles036",
+      "name": "亮白方砖",
+      "sourceUrl": "https://ambientcg.com/a/Tiles036",
+      "provider": "ambientCG",
+      "license": "CC0 1.0 Universal",
+      "licenseUrl": "https://ambientcg.com/license",
+      "resolution": "2K-JPG",
+      "roles": [
+        "wall"
+      ],
+      "tags": [
+        "36",
+        "bathroom",
+        "bright",
+        "clean",
+        "light",
+        "smooth",
+        "subway",
+        "tiles",
+        "white"
+      ],
+      "archive": {
+        "file": "Tiles036_2K-JPG.zip",
+        "bytes": 14365292,
+        "sha256": "548005dc451d0b52026a3b8811c4cfe9db6cd1d40f4d31abbe37d6256c0a9229"
+      },
+      "maps": {
+        "diffuse": "Tiles036_2K-JPG_Color.jpg",
+        "normal": "Tiles036_2K-JPG_NormalGL.jpg",
+        "roughness": "Tiles036_2K-JPG_Roughness.jpg",
+        "displacement": "Tiles036_2K-JPG_Displacement.jpg"
+      },
+      "mapFiles": {
+        "diffuse": {
+          "file": "diffuse.jpg",
+          "bytes": 1419520,
+          "sha256": "2a8bf08f8662b98d788736bf0c8581516f2f90d0d4419ce9cfbb32287e950e5e"
+        },
+        "normal": {
+          "file": "normal.jpg",
+          "bytes": 4661307,
+          "sha256": "4a32dda83e5c52c4bf571b9d2be6b51f0dc5bc56c9a2c64d281018186372c749"
+        },
+        "roughness": {
+          "file": "roughness.jpg",
+          "bytes": 1177408,
+          "sha256": "a7fd61c11be147db06c1ca1bebea67c46447358e109874a34222792904dfcb8f"
+        },
+        "displacement": {
+          "file": "displacement.jpg",
+          "bytes": 1177493,
+          "sha256": "c2a6537630761f3f62a092d0d1bbcc88fe2be61886371d98fae9df95f40e953a"
+        }
+      },
+      "importedAt": "2026-08-01T01:54:12.748Z",
+      "folder": "acg_tiles036"
+    },
+    {
+      "materialId": "acg-tiles107",
+      "assetId": "Tiles107",
+      "name": "亮白大板砖",
+      "sourceUrl": "https://ambientcg.com/a/Tiles107",
+      "provider": "ambientCG",
+      "license": "CC0 1.0 Universal",
+      "licenseUrl": "https://ambientcg.com/license",
+      "resolution": "2K-JPG",
+      "roles": [
+        "floor",
+        "wall"
+      ],
+      "tags": [
+        "107",
+        "tiles",
+        "white"
+      ],
+      "archive": {
+        "file": "Tiles107_2K-JPG.zip",
+        "bytes": 6705310,
+        "sha256": "fa76887bb33af0972154700126d1f86d01eaed518341ce7411616c1d1202ac55"
+      },
+      "maps": {
+        "diffuse": "Tiles107_2K-JPG_Color.jpg",
+        "normal": "Tiles107_2K-JPG_NormalGL.jpg",
+        "roughness": "Tiles107_2K-JPG_Roughness.jpg",
+        "displacement": "Tiles107_2K-JPG_Displacement.jpg",
+        "ao": "Tiles107_2K-JPG_AmbientOcclusion.jpg"
+      },
+      "mapFiles": {
+        "diffuse": {
+          "file": "diffuse.jpg",
+          "bytes": 780156,
+          "sha256": "a74664ca3721976b9407d5b1bba65534f616eb2519ae16d76b4ec5f426530bdb"
+        },
+        "normal": {
+          "file": "normal.jpg",
+          "bytes": 1561357,
+          "sha256": "063e5e1ad15fadcf7453a2b6be8cb80d5d88da8aa79068f894a39f1414fef4db"
+        },
+        "roughness": {
+          "file": "roughness.jpg",
+          "bytes": 601206,
+          "sha256": "67cc4cc02b9e5dde932e47b0c3ba6e16b9a0e3847b11f76ea0961641816d9e1d"
+        },
+        "displacement": {
+          "file": "displacement.jpg",
+          "bytes": 700117,
+          "sha256": "b08c0831d62e971e8965df8444af50f2439dc216ea249db42c3bc87582d4561a"
+        },
+        "ao": {
+          "file": "ao.jpg",
+          "bytes": 220471,
+          "sha256": "63b3987f5b78bb6ecc693455ab30e5032bbc09cf98255de75abc5f85f50d3ff4"
+        }
+      },
+      "importedAt": "2026-08-01T01:51:02.867Z",
+      "folder": "acg_tiles107"
+    },
+    {
+      "materialId": "acg-wood049",
+      "assetId": "Wood049",
+      "name": "浅橡木",
+      "sourceUrl": "https://ambientcg.com/a/Wood049",
+      "provider": "ambientCG",
+      "license": "CC0 1.0 Universal",
+      "licenseUrl": "https://ambientcg.com/license",
+      "resolution": "1K-JPG",
+      "roles": [
+        "cabinet",
+        "countertop"
+      ],
+      "tags": [
+        "049",
+        "49",
+        "brown",
+        "furniture",
+        "grain",
+        "horizontal",
+        "interior",
+        "modern",
+        "natural",
+        "oak",
+        "plain",
+        "smooth",
+        "wood",
+        "wood049"
+      ],
+      "archive": {
+        "file": "Wood049_1K-JPG.zip",
+        "bytes": 6784006,
+        "sha256": "74ec51bcf5ddfc2e9af6205dc5cbcc90ad51c22117e013ff8b1c7258f8ecbc69"
+      },
+      "maps": {
+        "diffuse": "Wood049_1K-JPG_Color.jpg",
+        "normal": "Wood049_1K-JPG_NormalGL.jpg",
+        "roughness": "Wood049_1K-JPG_Roughness.jpg",
+        "displacement": "Wood049_1K-JPG_Displacement.jpg"
+      },
+      "mapFiles": {
+        "diffuse": {
+          "file": "diffuse.jpg",
+          "bytes": 954756,
+          "sha256": "451ee4dd719628289b4969f75dc583b5f77f8471d5d885ba5015fd90e7e5ce61"
+        },
+        "normal": {
+          "file": "normal.jpg",
+          "bytes": 1559595,
+          "sha256": "e9aaec13f9c6199e7ec440433005a8c52a88332f26a3887fc057179089fb747a"
+        },
+        "roughness": {
+          "file": "roughness.jpg",
+          "bytes": 708949,
+          "sha256": "7683f29e71c24b987e4a7dcc74d5a9ed5ab4cac2e145d507799ba9c9c2c4ef54"
+        },
+        "displacement": {
+          "file": "displacement.jpg",
+          "bytes": 599648,
+          "sha256": "3fcb2a67d00a0fff5171d9a42e720765287a80a76a9e80eaf07405ca6ea1c1a2"
+        }
+      },
+      "importedAt": "2026-08-01T02:18:37.170Z",
+      "folder": "acg_wood049"
+    }
+  ]
+}

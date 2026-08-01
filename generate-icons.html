@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Icons</title></head>
+<body>
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+<script>
+function drawIcon(canvas) {
+    const ctx = canvas.getContext('2d');
+    const size = canvas.width;
+    const padding = size * 0.15;
+
+    // 背景
+    ctx.fillStyle = '#007AFF';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, size, size, size * 0.2);
+    ctx.fill();
+
+    // 橱柜图标
+    ctx.fillStyle = '#ffffff';
+    const iconSize = size * 0.5;
+    const x = (size - iconSize) / 2;
+    const y = (size - iconSize) / 2;
+
+    // 柜体
+    ctx.fillRect(x, y, iconSize, iconSize * 0.8);
+
+    // 门
+    ctx.strokeStyle = '#007AFF';
+    ctx.lineWidth = size * 0.02;
+    ctx.strokeRect(x + iconSize * 0.05, y + iconSize * 0.05, iconSize * 0.42, iconSize * 0.7);
+    ctx.strokeRect(x + iconSize * 0.53, y + iconSize * 0.05, iconSize * 0.42, iconSize * 0.7);
+
+    // 把手
+    ctx.fillStyle = '#007AFF';
+    ctx.fillRect(x + iconSize * 0.4, y + iconSize * 0.35, iconSize * 0.04, iconSize * 0.15);
+    ctx.fillRect(x + iconSize * 0.56, y + iconSize * 0.35, iconSize * 0.04, iconSize * 0.15);
+
+    // 台面
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x - iconSize * 0.05, y, iconSize * 1.1, iconSize * 0.08);
+
+    // 2D/3D 文字
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${size * 0.12}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('2D/3D', size / 2, y + iconSize + size * 0.12);
+}
+
+drawIcon(document.getElementById('c192'));
+drawIcon(document.getElementById('c512'));
+
+// 下载
+['c192', 'c512'].forEach(id => {
+    const canvas = document.getElementById(id);
+    const link = document.createElement('a');
+    link.download = `icon-${canvas.width}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+});
+</script>
+</body>
+</html>

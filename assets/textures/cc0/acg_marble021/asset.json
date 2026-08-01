@@ -1,0 +1,58 @@
+{
+  "materialId": "acg-marble021",
+  "assetId": "Marble021",
+  "name": "冷白细纹石材",
+  "sourceUrl": "https://ambientcg.com/a/Marble021",
+  "provider": "ambientCG",
+  "license": "CC0 1.0 Universal",
+  "licenseUrl": "https://ambientcg.com/license",
+  "resolution": "2K-JPG",
+  "roles": [
+    "floor",
+    "wall",
+    "countertop"
+  ],
+  "tags": [
+    "21",
+    "bright",
+    "marble",
+    "reflective",
+    "shiny",
+    "white"
+  ],
+  "archive": {
+    "file": "Marble021_2K-JPG.zip",
+    "bytes": 11433854,
+    "sha256": "13a661f0d2ade59d43f97f92f5e9a56f06ebafb68d3671daaba2b4adb320ff41"
+  },
+  "maps": {
+    "diffuse": "Marble021_2K-JPG_Color.jpg",
+    "normal": "Marble021_2K-JPG_NormalGL.jpg",
+    "roughness": "Marble021_2K-JPG_Roughness.jpg",
+    "displacement": "Marble021_2K-JPG_Displacement.jpg"
+  },
+  "mapFiles": {
+    "diffuse": {
+      "file": "diffuse.jpg",
+      "bytes": 3687428,
+      "sha256": "8eae10b9fa829a88458a076cff1235da48aa2aaf3ab043535cce59ec5bce1fbf"
+    },
+    "normal": {
+      "file": "normal.jpg",
+      "bytes": 1312696,
+      "sha256": "00ff3e14c44e35dfb05c171355c9b332364a0a94d7026ebd49e33bc8a75aa0bd"
+    },
+    "roughness": {
+      "file": "roughness.jpg",
+      "bytes": 1253588,
+      "sha256": "26287d257dd85cbab6b3828b609ea9df955ce84691d2898514f208cab3492489"
+    },
+    "displacement": {
+      "file": "displacement.jpg",
+      "bytes": 2557500,
+      "sha256": "630116292917654edd5eab5909ee34bd0393e15dc453b5bc65fe598c7f1c1f90"
+    }
+  },
+  "importedAt": "2026-08-01T01:56:34.532Z",
+  "folder": "acg_marble021"
+}

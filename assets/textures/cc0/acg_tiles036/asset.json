@@ -1,0 +1,59 @@
+{
+  "materialId": "acg-tiles036",
+  "assetId": "Tiles036",
+  "name": "亮白方砖",
+  "sourceUrl": "https://ambientcg.com/a/Tiles036",
+  "provider": "ambientCG",
+  "license": "CC0 1.0 Universal",
+  "licenseUrl": "https://ambientcg.com/license",
+  "resolution": "2K-JPG",
+  "roles": [
+    "wall"
+  ],
+  "tags": [
+    "36",
+    "bathroom",
+    "bright",
+    "clean",
+    "light",
+    "smooth",
+    "subway",
+    "tiles",
+    "white"
+  ],
+  "archive": {
+    "file": "Tiles036_2K-JPG.zip",
+    "bytes": 14365292,
+    "sha256": "548005dc451d0b52026a3b8811c4cfe9db6cd1d40f4d31abbe37d6256c0a9229"
+  },
+  "maps": {
+    "diffuse": "Tiles036_2K-JPG_Color.jpg",
+    "normal": "Tiles036_2K-JPG_NormalGL.jpg",
+    "roughness": "Tiles036_2K-JPG_Roughness.jpg",
+    "displacement": "Tiles036_2K-JPG_Displacement.jpg"
+  },
+  "mapFiles": {
+    "diffuse": {
+      "file": "diffuse.jpg",
+      "bytes": 1419520,
+      "sha256": "2a8bf08f8662b98d788736bf0c8581516f2f90d0d4419ce9cfbb32287e950e5e"
+    },
+    "normal": {
+      "file": "normal.jpg",
+      "bytes": 4661307,
+      "sha256": "4a32dda83e5c52c4bf571b9d2be6b51f0dc5bc56c9a2c64d281018186372c749"
+    },
+    "roughness": {
+      "file": "roughness.jpg",
+      "bytes": 1177408,
+      "sha256": "a7fd61c11be147db06c1ca1bebea67c46447358e109874a34222792904dfcb8f"
+    },
+    "displacement": {
+      "file": "displacement.jpg",
+      "bytes": 1177493,
+      "sha256": "c2a6537630761f3f62a092d0d1bbcc88fe2be61886371d98fae9df95f40e953a"
+    }
+  },
+  "importedAt": "2026-08-01T01:54:12.748Z",
+  "folder": "acg_tiles036"
+}

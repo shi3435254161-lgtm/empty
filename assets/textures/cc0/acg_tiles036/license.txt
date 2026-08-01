@@ -1,0 +1,6 @@
+亮白方砖
+Source: https://ambientcg.com/a/Tiles036
+License: CC0 1.0 Universal
+License URL: https://ambientcg.com/license
+Resolution: 2K-JPG
+Archive SHA-256: 548005dc451d0b52026a3b8811c4cfe9db6cd1d40f4d31abbe37d6256c0a9229

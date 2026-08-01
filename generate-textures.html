@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head><title>生成纹理</title></head>
+<body>
+<canvas id="c" width="512" height="512"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// 木纹纹理
+function generateWood(color1, color2, name) {
+    const w = 512, h = 512;
+    ctx.fillStyle = color1;
+    ctx.fillRect(0, 0, w, h);
+
+    // 木纹线条
+    ctx.strokeStyle = color2;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.3;
+
+    for (let i = 0; i < 200; i++) {
+        ctx.beginPath();
+        const y = Math.random() * h;
+        ctx.moveTo(0, y);
+        for (let x = 0; x < w; x += 10) {
+            ctx.lineTo(x, y + Math.sin(x * 0.02) * 5 + Math.random() * 2);
+        }
+        ctx.stroke();
+    }
+
+    // 添加噪点
+    ctx.globalAlpha = 0.05;
+    for (let i = 0; i < 5000; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? '#000' : '#fff';
+        ctx.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+    }
+
+    ctx.globalAlpha = 1;
+    downloadCanvas(name);
+}
+
+// 石英石纹理
+function generateQuartz(baseColor, name) {
+    const w = 512, h = 512;
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, w, h);
+
+    // 颗粒效果
+    for (let i = 0; i < 3000; i++) {
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        const size = 1 + Math.random() * 3;
+        ctx.fillStyle = `rgba(${200 + Math.random() * 55}, ${200 + Math.random() * 55}, ${200 + Math.random() * 55}, ${0.3 + Math.random() * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // 闪光点
+    for (let i = 0; i < 200; i++) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.5 + Math.random() * 0.5})`;
+        ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
+    }
+
+    downloadCanvas(name);
+}
+
+// 大理石纹理
+function generateMarble(baseColor, veinColor, name) {
+    const w = 512, h = 512;
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, w, h);
+
+    // 纹理脉络
+    ctx.strokeStyle = veinColor;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.2;
+
+    for (let i = 0; i < 15; i++) {
+        ctx.beginPath();
+        let x = Math.random() * w;
+        let y = Math.random() * h;
+        ctx.moveTo(x, y);
+        for (let j = 0; j < 20; j++) {
+            x += (Math.random() - 0.5) * 80;
+            y += (Math.random() - 0.5) * 80;
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    // 细纹理
+    ctx.lineWidth = 0.5;
+    ctx.globalAlpha = 0.1;
+    for (let i = 0; i < 50; i++) {
+        ctx.beginPath();
+        let x = Math.random() * w;
+        let y = Math.random() * h;
+        ctx.moveTo(x, y);
+        for (let j = 0; j < 10; j++) {
+            x += (Math.random() - 0.5) * 40;
+            y += (Math.random() - 0.5) * 40;
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1;
+    downloadCanvas(name);
+}
+
+// 拉丝金属纹理
+function generateBrushedMetal(name) {
+    const w = 512, h = 512;
+    ctx.fillStyle = '#c0c0c0';
+    ctx.fillRect(0, 0, w, h);
+
+    // 拉丝线条
+    ctx.strokeStyle = 'rgba(200, 200, 200, 0.5)';
+    ctx.lineWidth = 0.5;
+
+    for (let i = 0; i < h; i += 2) {
+        ctx.beginPath();
+        ctx.moveTo(0, i + Math.random());
+        ctx.lineTo(w, i + Math.random());
+        ctx.stroke();
+    }
+
+    // 噪点
+    for (let i = 0; i < 2000; i++) {
+        ctx.fillStyle = `rgba(${180 + Math.random() * 75}, ${180 + Math.random() * 75}, ${180 + Math.random() * 75}, 0.3)`;
+        ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
+    }
+
+    downloadCanvas(name);
+}
+
+// 瓷砖纹理
+function generateTile(name) {
+    const w = 512, h = 512;
+    const tileSize = 64;
+
+    ctx.fillStyle = '#e8e0d8';
+    ctx.fillRect(0, 0, w, h);
+
+    // 瓷砖
+    for (let y = 0; y < h; y += tileSize) {
+        for (let x = 0; x < w; x += tileSize) {
+            ctx.fillStyle = `rgb(${228 + Math.random() * 10}, ${224 + Math.random() * 10}, ${216 + Math.random() * 10})`;
+            ctx.fillRect(x + 1, y + 1, tileSize - 2, tileSize - 2);
+        }
+    }
+
+    // 缝隙
+    ctx.strokeStyle = '#d0c8c0';
+    ctx.lineWidth = 2;
+    for (let y = 0; y <= h; y += tileSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+    }
+    for (let x = 0; x <= w; x += tileSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+    }
+
+    downloadCanvas(name);
+}
+
+function downloadCanvas(name) {
+    const link = document.createElement('a');
+    link.download = name + '.png';
+    link.href = canvas.toDataURL();
+    link.click();
+}
+
+// 生成所有纹理
+generateWood('#deb887', '#a0522d', 'wood-oak');
+generateWood('#8b6914', '#654321', 'wood-walnut');
+generateWood('#f5f5dc', '#d2b48c', 'wood-maple');
+generateQuartz('#f0f0f0', 'quartz-white');
+generateQuartz('#f5deb3', 'quartz-cream');
+generateQuartz('#a9a9a9', 'quartz-gray');
+generateMarble('#f5f5f0', '#d0d0d0', 'marble-white');
+generateMarble('#e8dcc8', '#c0b090', 'marble-cream');
+generateBrushedMetal('metal-brushed');
+generateTile('tile-ceramic');
+
+alert('纹理已生成并下载！');
+</script>
+</body>
+</html>

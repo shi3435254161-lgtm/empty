@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#1f2421">
+    <meta name="description" content="沟厢品尚装修公司厨卫空间设计与 3D 预览工具">
+    <title>沟厢品尚装修公司 · 厨卫设计</title>
+    <link rel="stylesheet" href="css/style.css?v=20260801-mobile-release-v1">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <canvas id="ambient-particles" class="ambient-particles" aria-hidden="true"></canvas>
+    <div id="app-loader" class="app-loader" role="status" aria-live="polite" aria-label="正在载入设计工具">
+        <span class="app-loader-mark" aria-hidden="true"></span>
+        <span class="app-loader-track" aria-hidden="true"><i></i></span>
+    </div>
+    <div id="app">
+        <header class="app-header">
+            <div class="brand-block" aria-label="沟厢品尚装修公司厨卫设计">
+                <div class="brand-mark"><i data-lucide="panels-top-left"></i></div>
+                <div class="brand-copy">
+                    <strong>沟厢品尚装修公司</strong>
+                    <span>厨卫设计</span>
+                </div>
+            </div>
+
+            <label class="project-name-wrap">
+                <span class="sr-only">方案名称</span>
+                <input id="project-name" class="project-name" value="客户厨卫方案" maxlength="24">
+            </label>
+
+            <div class="header-actions">
+                <div class="history-actions">
+                    <button id="btn-undo" class="icon-btn" type="button" title="撤销 (Ctrl+Z)" disabled>
+                        <i data-lucide="undo-2"></i>
+                    </button>
+                    <button id="btn-redo" class="icon-btn" type="button" title="重做 (Ctrl+Shift+Z)" disabled>
+                        <i data-lucide="redo-2"></i>
+                    </button>
+                </div>
+
+                <button id="btn-library-toggle" class="icon-btn library-toggle-btn" type="button" title="打开模块库" aria-label="打开模块库" aria-expanded="false">
+                    <i data-lucide="panel-left-open"></i>
+                </button>
+
+                <div class="view-switch" role="tablist" aria-label="视图">
+                    <button id="btn-2d" class="view-btn active" type="button" role="tab" aria-selected="true">
+                        <i data-lucide="scan"></i><span>平面</span>
+                    </button>
+                    <button id="btn-3d" class="view-btn" type="button" role="tab" aria-selected="false">
+                        <i data-lucide="box"></i><span>空间</span>
+                    </button>
+                </div>
+
+                <div class="save-state" id="save-state" aria-live="polite">
+                    <span class="save-state-dot"></span>
+                    <span id="save-state-text">已自动保存</span>
+                </div>
+
+                <div class="menu-wrap">
+                    <button id="btn-project-menu" class="icon-btn" type="button" title="方案菜单" aria-expanded="false">
+                        <i data-lucide="folder-kanban"></i>
+                    </button>
+                    <div id="project-menu" class="project-menu" hidden>
+                        <button id="btn-new" type="button"><i data-lucide="file-plus-2"></i>新建方案</button>
+                        <button id="btn-reference-kitchen" type="button"><i data-lucide="layout-template"></i>亮白实景样板</button>
+                        <button id="btn-plan-library" type="button"><i data-lucide="folder-open"></i>方案库</button>
+                        <button id="btn-import" type="button"><i data-lucide="file-up"></i>导入方案</button>
+                        <button id="btn-export-json" type="button"><i data-lucide="file-down"></i>导出方案</button>
+                    </div>
+                </div>
+                <input id="file-import" type="file" accept="application/json,.json" hidden>
+
+                <button id="btn-save" class="secondary-btn" type="button" title="保存方案 (Ctrl+S)">
+                    <i data-lucide="save"></i><span>保存</span>
+                </button>
+                <button id="btn-help" class="icon-btn help-btn" type="button" title="打开教程">
+                    <i data-lucide="circle-help"></i>
+                </button>
+                <button id="btn-preview-render" class="secondary-btn" type="button" title="渐进式高清预览">
+                    <i data-lucide="sparkles"></i><span>高清预览</span>
+                </button>
+                <button id="btn-showroom" class="secondary-btn" type="button" title="打开展厅预览">
+                    <i data-lucide="presentation"></i><span>展厅</span>
+                </button>
+                <button id="btn-export" class="primary-btn" type="button" title="导出当前视图">
+                    <i data-lucide="download"></i><span>导出图片</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="workspace">
+            <aside id="module-panel" class="library-panel">
+                <section class="sidebar-section room-settings">
+                    <div class="section-heading">
+                        <div>
+                            <span class="eyebrow">ROOM</span>
+                            <h2>空间尺寸</h2>
+                        </div>
+                        <span class="unit-badge">米</span>
+                    </div>
+                    <div class="room-fields">
+                        <label class="field-control">
+                            <span>宽度</span>
+                            <input type="number" id="room-width" value="2.5" min="1" max="10" step="0.1" inputmode="decimal">
+                        </label>
+                        <label class="field-control">
+                            <span>进深</span>
+                            <input type="number" id="room-length" value="3" min="1" max="10" step="0.1" inputmode="decimal">
+                        </label>
+                    </div>
+                    <label class="ceiling-toggle">
+                        <input id="room-ceiling" type="checkbox" checked>
+                        <span>带顶</span>
+                    </label>
+                    <button id="btn-set-room" class="apply-room-btn" type="button">
+                        <i data-lucide="maximize-2"></i>应用尺寸
+                    </button>
+                </section>
+
+                <section class="sidebar-section catalog-section">
+                    <div class="section-heading catalog-heading">
+                        <div>
+                            <span class="eyebrow">LIBRARY</span>
+                            <h2>模块库</h2>
+                        </div>
+                        <span id="module-count" class="unit-badge">0 项</span>
+                    </div>
+
+                    <label class="search-control">
+                        <i data-lucide="search"></i>
+                        <input id="module-search" type="search" placeholder="搜索模块" autocomplete="off">
+                    </label>
+
+                    <div class="module-tabs" role="tablist" aria-label="模块类别">
+                        <button class="tab-btn active" type="button" data-tab="base" role="tab">地柜</button>
+                        <button class="tab-btn" type="button" data-tab="wall" role="tab">吊柜</button>
+                        <button class="tab-btn" type="button" data-tab="appliance" role="tab">电器</button>
+                        <button class="tab-btn" type="button" data-tab="bath" role="tab">卫浴</button>
+                        <button class="tab-btn" type="button" data-tab="countertop" role="tab">台面</button>
+                        <button class="tab-btn" type="button" data-tab="full" role="tab">组合</button>
+                        <button class="tab-btn" type="button" data-tab="decor" role="tab">软装</button>
+                    </div>
+                    <div class="module-list" id="module-list"></div>
+                </section>
+            </aside>
+
+            <button id="library-drawer-scrim" class="library-drawer-scrim" type="button" aria-label="关闭模块库" tabindex="-1"></button>
+
+            <section id="canvas-container" class="design-stage" aria-label="设计画布">
+                <canvas id="canvas-2d"></canvas>
+                <div id="canvas-3d" hidden></div>
+
+                <div id="toolbar-2d" class="viewport-toolbar">
+                    <button id="btn-tool-select" class="icon-btn active" type="button" title="选择/摆放"><i data-lucide="mouse-pointer-2"></i></button>
+                    <button id="btn-tool-pan" class="icon-btn" type="button" title="拖动画布"><i data-lucide="hand"></i></button>
+                    <button id="btn-tool-wall" class="icon-btn" type="button" title="画墙/隔断"><i data-lucide="drafting-compass"></i></button>
+                    <button id="btn-tool-floor" class="icon-btn" type="button" title="刷地面材质"><i data-lucide="paint-bucket"></i></button>
+                    <button id="btn-tool-wall-material" class="icon-btn" type="button" title="刷墙面材质"><i data-lucide="paint-roller"></i></button>
+                    <button id="btn-delete-wall" class="icon-btn" type="button" title="删除最近墙体"><i data-lucide="eraser"></i></button>
+                    <span class="toolbar-divider"></span>
+                    <button id="btn-zoom-out" class="icon-btn" type="button" title="缩小"><i data-lucide="minus"></i></button>
+                    <span id="zoom-label" class="zoom-label">100%</span>
+                    <button id="btn-zoom-in" class="icon-btn" type="button" title="放大"><i data-lucide="plus"></i></button>
+                    <span class="toolbar-divider"></span>
+                    <button id="btn-fit" class="icon-btn" type="button" title="适配画布"><i data-lucide="maximize"></i></button>
+                    <button id="btn-grid" class="icon-btn active" type="button" title="0.05 m 网格吸附" aria-pressed="true"><i data-lucide="grid-3x3"></i></button>
+                    <span class="toolbar-divider"></span>
+                    <button id="btn-dimensions" class="icon-btn active" type="button" title="尺寸标注" aria-pressed="true"><i data-lucide="ruler"></i></button>
+                    <button id="btn-guides" class="icon-btn active" type="button" title="智能辅助线" aria-pressed="true"><i data-lucide="crosshair"></i></button>
+                    <button id="btn-clearance" class="icon-btn active" type="button" title="净距检查" aria-pressed="true"><i data-lucide="scan-line"></i></button>
+                </div>
+
+                <div id="surface-material-bar" class="surface-material-bar" aria-label="面材质">
+                    <button class="active" type="button" data-surface-material="stone-grey" aria-pressed="true">
+                        <span style="--mat:#46515d"></span><b>灰岩砖</b>
+                    </button>
+                    <button type="button" data-surface-material="marble-white" aria-pressed="false">
+                        <span style="--mat:#e8edf0"></span><b>白玉石</b>
+                    </button>
+                    <button type="button" data-surface-material="warm-tile" aria-pressed="false">
+                        <span style="--mat:#d2c2a0"></span><b>暖瓷砖</b>
+                    </button>
+                    <button type="button" data-surface-material="wood-oak" aria-pressed="false">
+                        <span style="--mat:#b88552"></span><b>橡木纹</b>
+                    </button>
+                    <button type="button" data-surface-material="dark-slate" aria-pressed="false">
+                        <span style="--mat:#202a31"></span><b>深岩板</b>
+                    </button>
+                    <button type="button" data-surface-material="ph-concrete-tile" aria-pressed="false">
+                        <span style="--mat:#8b9699"></span><b>CC0墙砖</b>
+                    </button>
+                    <button type="button" data-surface-material="ph-brown-floor" aria-pressed="false">
+                        <span style="--mat:#8a6041"></span><b>防滑地砖</b>
+                    </button>
+                    <button type="button" data-surface-material="ph-parquet" aria-pressed="false">
+                        <span style="--mat:#b27a42"></span><b>拼花木地板</b>
+                    </button>
+                    <button type="button" data-surface-material="ph-dark-wood" aria-pressed="false">
+                        <span style="--mat:#3b2418"></span><b>深色木纹</b>
+                    </button>
+                    <button type="button" data-surface-material="ph-fine-wood" aria-pressed="false">
+                        <span style="--mat:#c0935b"></span><b>细木纹</b>
+                    </button>
+                    <button type="button" data-surface-material="ph-metal-plate" aria-pressed="false">
+                        <span style="--mat:#697279"></span><b>金属板</b>
+                    </button>
+                    <button type="button" data-surface-material="acg-tiles107" aria-pressed="false" title="ambientCG CC0 · 亮白大板砖">
+                        <span style="--mat:#f5f7f6"></span><b>亮白大板砖</b>
+                    </button>
+                    <button type="button" data-surface-material="acg-tiles036" aria-pressed="false" title="ambientCG CC0 · 亮白方砖">
+                        <span style="--mat:#edf2f1"></span><b>亮白方砖</b>
+                    </button>
+                    <button type="button" data-surface-material="acg-marble021" aria-pressed="false" title="ambientCG CC0 · 冷白细纹石材">
+                        <span style="--mat:#f1f4f3"></span><b>冷白石材</b>
+                    </button>
+                    <button type="button" data-surface-material="acg-metal009" aria-pressed="false" title="ambientCG CC0 · 拉丝不锈钢">
+                        <span style="--mat:#9fa7a7"></span><b>拉丝钢</b>
+                    </button>
+                    <button type="button" data-surface-material="acg-wood049" aria-pressed="false" title="ambientCG CC0 · 浅橡木">
+                        <span style="--mat:#b18a58"></span><b>浅橡木</b>
+                    </button>
+                </div>
+                <div id="surface-mode-hint" class="surface-mode-hint" hidden>
+                    <strong>刷材质</strong>
+                    <span>先选色板，再点“刷地面”或“刷墙面”，最后点画布应用到地面或所有墙体。</span>
+                </div>
+
+                <div id="toolbar-3d" class="viewport-toolbar camera-toolbar" hidden>
+                    <button class="camera-btn active" type="button" data-camera="perspective">透视</button>
+                    <button class="camera-btn" type="button" data-camera="front">正视</button>
+                    <button class="camera-btn" type="button" data-camera="top">俯视</button>
+                    <button id="btn-reset-camera" class="icon-btn" type="button" title="重置视角"><i data-lucide="focus"></i></button>
+                    <span class="toolbar-divider"></span>
+                    <select id="render-quality" class="toolbar-select" title="渲染画质">
+                        <option value="balanced">流畅</option>
+                        <option value="render">高清</option>
+                        <option value="draft">极速</option>
+                    </select>
+                    <select id="lighting-preset" class="toolbar-select" title="灯光氛围">
+                        <option value="natural">自然光</option>
+                        <option value="bright" selected>亮白现场</option>
+                        <option value="showroom">展厅光</option>
+                        <option value="soft">柔和光</option>
+                    </select>
+                    <button id="btn-bright-surfaces" class="icon-btn" type="button" title="套用亮白墙地"><i data-lucide="sun-medium"></i></button>
+                </div>
+
+                <div id="showroom-label" class="showroom-label" hidden>PBR 渲染 · 法线贴图 · 环境反射 · ACES 色调映射</div>
+                <div id="showroom-toolbar" class="showroom-toolbar" hidden>
+                    <button class="active" type="button" data-showroom-view="front">正视</button>
+                    <button type="button" data-showroom-view="angle">45°视角</button>
+                    <button type="button" data-showroom-view="walk">客户漫游</button>
+                    <button type="button" data-showroom-view="top">俯视</button>
+                    <button type="button" data-showroom-view="vanity">台盆特写</button>
+                    <button type="button" data-showroom-view="shower">淋浴区</button>
+                    <button type="button" data-showroom-exit>退出</button>
+                </div>
+                <div id="render-overlay" class="render-overlay" hidden>
+                    <div class="render-card">
+                        <span class="render-spinner" aria-hidden="true"></span>
+                        <strong id="render-overlay-title">生成高清现场图</strong>
+                        <small id="render-overlay-text">正在切换高清 PBR 光照与后处理</small>
+                        <span class="render-progress" aria-hidden="true"><i></i><i></i><i></i></span>
+                    </div>
+                </div>
+
+                <div class="nav-pad" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+
+                <div class="bottom-view-dock">
+                    <button class="floor-pill" type="button"><i data-lucide="layers-3"></i><span>1F</span><i data-lucide="chevron-down"></i></button>
+                    <div class="dock-segment" role="tablist" aria-label="底部视图切换">
+                        <button id="btn-dock-2d" class="active" type="button">2D</button>
+                        <button id="btn-dock-3d" type="button">3D</button>
+                    </div>
+                    <button id="btn-dock-eye" class="dock-icon-btn" type="button" title="空间预览"><i data-lucide="eye"></i></button>
+                    <button id="btn-dock-reset" class="dock-icon-btn" type="button" title="重置视角"><i data-lucide="scan-eye"></i></button>
+                </div>
+
+                <div class="stage-meta">
+                    <span id="view-mode-label">平面布局</span>
+                    <span class="meta-divider"></span>
+                    <span id="selection-meta">未选择模块</span>
+                </div>
+            </section>
+
+            <aside id="prop-panel" class="inspector-panel">
+                <div id="overview-panel" class="overview-panel">
+                    <div class="section-heading inspector-heading">
+                        <div>
+                            <span class="eyebrow">PROJECT</span>
+                            <h2>方案概览</h2>
+                        </div>
+                        <span id="design-health" class="health-badge">空间正常</span>
+                    </div>
+
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span>模块</span>
+                            <strong id="stat-count">0</strong>
+                        </div>
+                        <div class="stat-item">
+                            <span>柜体总宽</span>
+                            <strong id="stat-length">0.0 m</strong>
+                        </div>
+                        <div class="stat-item">
+                            <span>地柜</span>
+                            <strong id="stat-base">0</strong>
+                        </div>
+                        <div class="stat-item">
+                            <span>吊柜</span>
+                            <strong id="stat-wall">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="summary-block">
+                        <div class="summary-row"><span>房间面积</span><strong id="stat-area">7.5 m²</strong></div>
+                        <div class="summary-row"><span>柜体占地</span><strong id="stat-footprint">0.0 m²</strong></div>
+                        <div class="summary-row"><span>空间冲突</span><strong id="stat-collisions">0 处</strong></div>
+                        <div class="summary-row"><span>设计评分</span><strong id="stat-score">100</strong></div>
+                    </div>
+
+                    <div class="design-advice">
+                        <div class="advice-title"><i data-lucide="sparkles"></i><span>智能体检</span></div>
+                        <ul id="design-advice-list"></ul>
+                    </div>
+
+                    <div id="warning-block" class="warning-block" hidden>
+                        <div class="warning-title"><i data-lucide="triangle-alert"></i>布局检查</div>
+                        <p id="warning-text"></p>
+                    </div>
+                </div>
+
+                <div id="selection-panel" class="selection-panel" hidden>
+                    <div class="section-heading inspector-heading">
+                        <div>
+                            <span class="eyebrow">SELECTED</span>
+                            <h2 id="selected-name">模块属性</h2>
+                        </div>
+                        <button id="btn-close-prop" class="icon-btn" type="button" title="取消选择"><i data-lucide="x"></i></button>
+                    </div>
+
+                    <div class="property-section">
+                        <h3>规格（米）</h3>
+                        <div class="dimension-grid">
+                            <label class="field-control"><span>宽度</span><div><input type="number" id="prop-width" min="0.05" max="12" step="0.01" inputmode="decimal"><em>m</em></div></label>
+                            <label class="field-control"><span>深度</span><div><input type="number" id="prop-depth" min="0.03" max="6" step="0.01" inputmode="decimal"><em>m</em></div></label>
+                            <label class="field-control"><span>高度</span><div><input type="number" id="prop-height" min="0.02" max="4" step="0.01" inputmode="decimal"><em>m</em></div></label>
+                            <label class="field-control"><span>离地</span><div><input type="number" id="prop-elevation" min="0" max="3.5" step="0.01" inputmode="decimal"><em>m</em></div></label>
+                        </div>
+                        <p class="dimension-hint">按米输入，例如 0.60 表示 60 cm；平面图和 3D 会同步更新。</p>
+                    </div>
+
+                    <div class="property-section">
+                        <h3>柜体饰面</h3>
+                        <div id="cabinet-colors" class="color-swatches" aria-label="柜体颜色">
+                            <button type="button" data-color="#f5f5f5" style="--swatch:#f5f5f5" title="雾白"></button>
+                            <button type="button" data-color="#faf0e6" style="--swatch:#faf0e6" title="米白"></button>
+                            <button type="button" data-color="#f5f5dc" style="--swatch:#f5f5dc" title="象牙白"></button>
+                            <button type="button" data-color="#e8e0d8" style="--swatch:#e8e0d8" title="暖灰"></button>
+                            <button type="button" data-color="#d3d3d3" style="--swatch:#d3d3d3" title="浅灰"></button>
+                            <button type="button" data-color="#a0a0a0" style="--swatch:#a0a0a0" title="中灰"></button>
+                            <button type="button" data-color="#808080" style="--swatch:#808080" title="深灰"></button>
+                            <button type="button" data-color="#333333" style="--swatch:#333333" title="墨黑"></button>
+                            <button type="button" data-color="#deb887" style="--swatch:#deb887" title="原木"></button>
+                            <button type="button" data-color="#c8a882" style="--swatch:#c8a882" title="橡木"></button>
+                            <button type="button" data-color="#b8956a" style="--swatch:#b8956a" title="白蜡木"></button>
+                            <button type="button" data-color="#a0522d" style="--swatch:#a0522d" title="樱桃木"></button>
+                            <button type="button" data-color="#8b6914" style="--swatch:#8b6914" title="胡桃木"></button>
+                            <button type="button" data-color="#654321" style="--swatch:#654321" title="深胡桃"></button>
+                            <button type="button" data-color="#e8d5b7" style="--swatch:#e8d5b7" title="白橡木"></button>
+                            <button type="button" data-color="#4682b4" style="--swatch:#4682b4" title="雾霾蓝"></button>
+                            <button type="button" data-color="#5f9ea0" style="--swatch:#5f9ea0" title="薄荷绿"></button>
+                            <button type="button" data-color="#6b8e23" style="--swatch:#6b8e23" title="橄榄绿"></button>
+                            <button type="button" data-color="#bc8f8f" style="--swatch:#bc8f8f" title="脏粉"></button>
+                            <button type="button" data-color="#c9a96e" style="--swatch:#c9a96e" title="香槟金"></button>
+                        </div>
+                    </div>
+
+                    <div class="property-section countertop-options">
+                        <h3>台面材质</h3>
+                        <div id="countertop-colors" class="color-swatches" aria-label="台面颜色">
+                            <button type="button" data-color="#f8f8f8" style="--swatch:#f8f8f8" title="纯白石英石"></button>
+                            <button type="button" data-color="#f0f0f0" style="--swatch:#f0f0f0" title="白色石英石"></button>
+                            <button type="button" data-color="#f5deb3" style="--swatch:#f5deb3" title="米黄石英石"></button>
+                            <button type="button" data-color="#e8dcc8" style="--swatch:#e8dcc8" title="暖白石英石"></button>
+                            <button type="button" data-color="#d4c5a9" style="--swatch:#d4c5a9" title="奶油石英石"></button>
+                            <button type="button" data-color="#c8b896" style="--swatch:#c8b896" title="沙石色"></button>
+                            <button type="button" data-color="#b0a080" style="--swatch:#b0a080" title="黄麻石英石"></button>
+                            <button type="button" data-color="#a9a9a9" style="--swatch:#a9a9a9" title="灰色石英石"></button>
+                            <button type="button" data-color="#808080" style="--swatch:#808080" title="深灰石英石"></button>
+                            <button type="button" data-color="#505050" style="--swatch:#505050" title="黑金沙"></button>
+                            <button type="button" data-color="#404040" style="--swatch:#404040" title="黑色石英石"></button>
+                            <button type="button" data-color="#f0e6d0" style="--swatch:#f0e6d0" title="大理石白"></button>
+                            <button type="button" data-color="#d8d0c0" style="--swatch:#d8d0c0" title="大理石米"></button>
+                            <button type="button" data-color="#c0b8a8" style="--swatch:#c0b8a8" title="大理石灰"></button>
+                            <button type="button" data-color="#c8c8c8" style="--swatch:#c8c8c8" title="不锈钢"></button>
+                            <button type="button" data-color="#b0b0b0" style="--swatch:#b0b0b0" title="拉丝不锈钢"></button>
+                            <button type="button" data-color="#a0a0a0" style="--swatch:#a0a0a0" title="岩板灰"></button>
+                            <button type="button" data-color="#383838" style="--swatch:#383838" title="岩板黑"></button>
+                        </div>
+                    </div>
+
+                    <div class="property-actions">
+                        <button id="btn-snap-wall" class="action-btn" type="button"><i data-lucide="magnet"></i>靠墙</button>
+                        <button id="btn-rotate" class="action-btn" type="button"><i data-lucide="rotate-cw"></i>旋转</button>
+                        <button id="btn-duplicate" class="action-btn" type="button"><i data-lucide="copy"></i>复制</button>
+                        <button id="btn-delete" class="action-btn danger" type="button"><i data-lucide="trash-2"></i>删除</button>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <canvas id="interaction-fx" class="interaction-fx" aria-hidden="true"></canvas>
+
+    <div id="plan-library" class="plan-library-backdrop" hidden>
+        <section class="plan-library-dialog" role="dialog" aria-modal="true" aria-labelledby="plan-library-title">
+            <header class="plan-library-header">
+                <div>
+                    <span class="eyebrow">PROJECTS</span>
+                    <h2 id="plan-library-title">方案库</h2>
+                </div>
+                <button id="btn-plan-library-close" class="icon-btn" type="button" title="关闭方案库">
+                    <i data-lucide="x"></i>
+                </button>
+            </header>
+            <div class="plan-library-create">
+                <input id="plan-copy-name" type="text" maxlength="48" placeholder="新方案名称" aria-label="新方案名称">
+                <button id="btn-plan-save-as" class="secondary-btn" type="button" title="另存为" aria-label="另存为"><i data-lucide="copy-plus"></i><span>另存为</span></button>
+            </div>
+            <div id="plan-library-list" class="plan-library-list"></div>
+        </section>
+    </div>
+
+    <div id="path-preview" class="path-preview" hidden>
+        <section class="path-preview-panel" role="dialog" aria-modal="true" aria-labelledby="path-preview-title">
+            <header class="path-preview-head">
+                <div>
+                    <span class="eyebrow">SCENE PREVIEW</span>
+                    <h2 id="path-preview-title">高清预览</h2>
+                </div>
+                <div class="path-preview-actions">
+                    <span id="path-preview-status">准备中</span>
+                        <button id="btn-path-preview-save" class="secondary-btn" type="button" title="保存高清图" aria-label="保存高清图">
+                            <i data-lucide="download"></i><span>保存高清图</span>
+                        </button>
+                        <button id="btn-path-preview-walk" class="secondary-btn" type="button" title="开启高清漫游" aria-label="开启高清漫游">
+                            <i data-lucide="move-3d"></i><span>高清漫游</span>
+                        </button>
+                        <button id="btn-path-preview-close" class="icon-btn" type="button" title="关闭高清预览">
+                            <i data-lucide="x"></i>
+                        </button>
+                </div>
+            </header>
+            <div class="path-preview-stage">
+                <img id="path-preview-raster" alt="高清现场图" hidden>
+                <canvas id="path-preview-canvas"></canvas>
+            </div>
+            <footer class="path-preview-foot">
+                <span id="path-preview-note">实时编辑使用 PBR；这里停止操作后渐进采样，可直接开启高清漫游。</span>
+                <button id="btn-path-preview-webgl" class="secondary-btn" type="button" title="按当前编辑器镜头导出空间图">导出当前空间图</button>
+            </footer>
+        </section>
+    </div>
+
+    <div id="tutorial" class="tutorial-backdrop" hidden>
+        <section class="tutorial-panel" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+            <button id="btn-tutorial-close" class="icon-btn tutorial-close" type="button" title="关闭教程">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="tutorial-media" aria-hidden="true">
+                <div class="tutorial-room">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+            <div class="tutorial-copy">
+                <span id="tutorial-kicker" class="eyebrow">STEP 1</span>
+                <h2 id="tutorial-title">先定厨房尺寸</h2>
+                <p id="tutorial-text">输入宽度和进深，点“应用尺寸”。房间比例会同步到平面和 3D 空间。</p>
+            </div>
+            <div class="tutorial-progress" id="tutorial-progress" aria-label="教程进度"></div>
+            <div class="tutorial-actions">
+                <button id="btn-tutorial-prev" class="secondary-btn" type="button">上一步</button>
+                <button id="btn-tutorial-next" class="primary-btn" type="button">下一步</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="js/vendor/three.min.js"></script>
+    <script src="js/vendor/OrbitControls.js"></script>
+    <script src="js/vendor/GLTFLoader.js"></script>
+    <script src="js/vendor/meshopt_decoder.js"></script>
+    <script src="js/vendor/RGBELoader.js"></script>
+    <script src="js/vendor/EffectComposer.js"></script>
+    <script src="js/vendor/RenderPass.js"></script>
+    <script src="js/vendor/ShaderPass.js"></script>
+    <script src="js/vendor/CopyShader.js"></script>
+    <script src="js/vendor/FXAAShader.js"></script>
+    <script src="js/vendor/lucide.min.js"></script>
+    <script src="js/polyhaven-assets.generated.js?v=20260731-cc0-window-v2"></script>
+    <script src="js/ambientcg-assets.generated.js?v=20260801-ambientcg-cc0-v1"></script>
+    <script src="js/incoming-assets.generated.js?v=20260801-sketchfab-audit-v1"></script>
+    <script src="js/model-assets.js?v=20260801-sketchfab-review-v2"></script>
+    <script src="js/cabinet.js?v=20260801-licensed-assets-only-v1"></script>
+    <script src="js/editor2d.js?v=20260801-library-ui-v8"></script>
+    <script src="js/scene3d.js?v=20260801-ambientcg-pbr-v2"></script>
+    <script src="js/app.js?v=20260801-licensed-assets-only-v1"></script>
+    <script>
+        const canUseServiceWorker =
+            'serviceWorker' in navigator &&
+            window.isSecureContext &&
+            location.protocol !== 'file:' &&
+            !['localhost', '127.0.0.1'].includes(location.hostname);
+
+        if (canUseServiceWorker) {
+            navigator.serviceWorker.register('sw.js').catch(error => console.warn('Service worker:', error));
+        }
+    </script>
+</body>
+</html>

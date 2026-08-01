@@ -1,0 +1,9 @@
+{
+  "appId": "com.muxu.kitchendesigner",
+  "appName": "沟厢品尚厨卫设计",
+  "webDir": "www-mobile",
+  "android": {
+    "backgroundColor": "#081014",
+    "allowMixedContent": false
+  }
+}
