@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#1f2421">
     <meta name="description" content="沟厢品尚装修公司厨卫空间设计与 3D 预览工具">
     <title>沟厢品尚装修公司 · 厨卫设计</title>
-    <link rel="stylesheet" href="css/style.css?v=20260801-mobile-release-v1">
+    <link rel="stylesheet" href="css/style.css?v=20260801-mobile-download-plan-v1">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -229,6 +229,27 @@
                     <span>先选色板，再点“刷地面”或“刷墙面”，最后点画布应用到地面或所有墙体。</span>
                 </div>
 
+                <div id="mobile-selection-dock" class="mobile-selection-dock" hidden aria-label="已选模块操作">
+                    <div class="mobile-selection-head">
+                        <strong id="mobile-selected-label">已选模块</strong>
+                        <button id="btn-mobile-selection-close" class="icon-btn" type="button" title="取消选择" aria-label="取消选择">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                    <div class="mobile-selection-actions">
+                        <button id="btn-mobile-properties" class="icon-btn" type="button" title="编辑属性" aria-label="编辑属性"><i data-lucide="sliders-horizontal"></i></button>
+                        <button id="btn-mobile-snap" class="icon-btn" type="button" title="靠墙" aria-label="靠墙"><i data-lucide="magnet"></i></button>
+                        <button id="btn-mobile-rotate" class="icon-btn" type="button" title="旋转" aria-label="旋转"><i data-lucide="rotate-cw"></i></button>
+                        <button id="btn-mobile-duplicate" class="icon-btn" type="button" title="复制" aria-label="复制"><i data-lucide="copy"></i></button>
+                        <button id="btn-mobile-delete" class="icon-btn danger" type="button" title="删除" aria-label="删除"><i data-lucide="trash-2"></i></button>
+                    </div>
+                </div>
+
+                <div id="mobile-placement-dock" class="mobile-placement-dock" hidden aria-live="polite">
+                    <span id="mobile-placement-label">正在放置模块</span>
+                    <button id="btn-mobile-placement-cancel" class="icon-btn" type="button" title="取消放置" aria-label="取消放置"><i data-lucide="x"></i></button>
+                </div>
+
                 <div id="toolbar-3d" class="viewport-toolbar camera-toolbar" hidden>
                     <button class="camera-btn active" type="button" data-camera="perspective">透视</button>
                     <button class="camera-btn" type="button" data-camera="front">正视</button>
@@ -274,6 +295,7 @@
 
                 <div class="bottom-view-dock">
                     <button class="floor-pill" type="button"><i data-lucide="layers-3"></i><span>1F</span><i data-lucide="chevron-down"></i></button>
+                    <button id="btn-dock-plans" class="dock-icon-btn mobile-plan-dock-btn" type="button" title="打开方案库" aria-label="打开方案库"><i data-lucide="folder-open"></i></button>
                     <div class="dock-segment" role="tablist" aria-label="底部视图切换">
                         <button id="btn-dock-2d" class="active" type="button">2D</button>
                         <button id="btn-dock-3d" type="button">3D</button>
@@ -427,13 +449,15 @@
                     <span class="eyebrow">PROJECTS</span>
                     <h2 id="plan-library-title">方案库</h2>
                 </div>
-                <button id="btn-plan-library-close" class="icon-btn" type="button" title="关闭方案库">
-                    <i data-lucide="x"></i>
-                </button>
+                <div class="plan-library-header-actions">
+                    <button id="btn-plan-new" class="icon-btn" type="button" title="新建空白方案" aria-label="新建空白方案"><i data-lucide="file-plus-2"></i></button>
+                    <button id="btn-plan-library-close" class="icon-btn" type="button" title="关闭方案库" aria-label="关闭方案库"><i data-lucide="x"></i></button>
+                </div>
             </header>
             <div class="plan-library-create">
                 <input id="plan-copy-name" type="text" maxlength="48" placeholder="新方案名称" aria-label="新方案名称">
                 <button id="btn-plan-save-as" class="secondary-btn" type="button" title="另存为" aria-label="另存为"><i data-lucide="copy-plus"></i><span>另存为</span></button>
+                <button id="btn-plan-save-current" class="secondary-btn" type="button" title="更新当前方案" aria-label="更新当前方案"><i data-lucide="save"></i><span>保存当前</span></button>
             </div>
             <div id="plan-library-list" class="plan-library-list"></div>
         </section>
@@ -451,9 +475,15 @@
                         <button id="btn-path-preview-save" class="secondary-btn" type="button" title="保存高清图" aria-label="保存高清图">
                             <i data-lucide="download"></i><span>保存高清图</span>
                         </button>
-                        <button id="btn-path-preview-walk" class="secondary-btn" type="button" title="开启高清漫游" aria-label="开启高清漫游">
+                        <button id="btn-path-preview-walk" class="secondary-btn" type="button" title="开启高清漫游" aria-label="开启高清漫游" aria-pressed="false">
                             <i data-lucide="move-3d"></i><span>高清漫游</span>
                         </button>
+                        <div class="path-preview-zoom" role="group" aria-label="漫游缩放">
+                            <button id="btn-path-preview-zoom-out" class="icon-btn" type="button" title="缩小" aria-label="缩小"><i data-lucide="minus"></i></button>
+                            <span id="path-preview-zoom-label">100%</span>
+                            <button id="btn-path-preview-zoom-in" class="icon-btn" type="button" title="放大" aria-label="放大"><i data-lucide="plus"></i></button>
+                            <button id="btn-path-preview-zoom-reset" class="icon-btn" type="button" title="重置缩放" aria-label="重置缩放"><i data-lucide="scan"></i></button>
+                        </div>
                         <button id="btn-path-preview-close" class="icon-btn" type="button" title="关闭高清预览">
                             <i data-lucide="x"></i>
                         </button>
@@ -509,9 +539,9 @@
     <script src="js/incoming-assets.generated.js?v=20260801-sketchfab-audit-v1"></script>
     <script src="js/model-assets.js?v=20260801-sketchfab-review-v2"></script>
     <script src="js/cabinet.js?v=20260801-licensed-assets-only-v1"></script>
-    <script src="js/editor2d.js?v=20260801-library-ui-v8"></script>
+    <script src="js/editor2d.js?v=20260801-mobile-touch-v2"></script>
     <script src="js/scene3d.js?v=20260801-ambientcg-pbr-v2"></script>
-    <script src="js/app.js?v=20260801-licensed-assets-only-v1"></script>
+    <script src="js/app.js?v=20260801-mobile-download-plan-v1"></script>
     <script>
         const canUseServiceWorker =
             'serviceWorker' in navigator &&

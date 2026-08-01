@@ -209,6 +209,8 @@ class PathTracerPreview {
         this.walkthroughEnabled = false;
         this.pointerId = null;
         this.dragging = false;
+        this.activePointers = new Map();
+        this.pinchDistance = 0;
         this.dragButton = 0;
         this.lastPointer = { x: 0, y: 0 };
         this.hasNavigation = false;
@@ -232,6 +234,8 @@ class PathTracerPreview {
         this.scene = null;
         this.camera = null;
         this.finalDataUrl = null;
+        this.activePointers.clear();
+        this.pinchDistance = 0;
         this.hideStableRaster();
     }
 
@@ -273,7 +277,8 @@ class PathTracerPreview {
             state: this.walkthroughEnabled ? 'walkthrough' : 'stable',
             samples: this.pathTracer?.samples || 0,
             maxSamples: this.maxSamples,
-            progress: 100
+            progress: 100,
+            zoom: this.getZoomPercent()
         });
         return this.walkthroughEnabled;
     }
@@ -339,7 +344,7 @@ class PathTracerPreview {
         if (!this.pathTracer || !this.camera) return;
         if (!this.pathTraceVisible) {
             this.renderRasterPreview();
-            this.onUpdate({ state: this.walkthroughEnabled ? 'walkthrough' : 'stable', samples: 0, maxSamples: this.maxSamples, progress: 100 });
+            this.onUpdate({ state: this.walkthroughEnabled ? 'walkthrough' : 'stable', samples: 0, maxSamples: this.maxSamples, progress: 100, zoom: this.getZoomPercent() });
             return;
         }
         if (this.frame) cancelAnimationFrame(this.frame);
@@ -348,7 +353,7 @@ class PathTracerPreview {
         this.pathTracer.updateCamera?.();
         this.pathTracer.reset?.();
         this.running = true;
-        this.onUpdate({ state: 'walkthrough', samples: 0, maxSamples: this.maxSamples, progress: 100 });
+        this.onUpdate({ state: 'walkthrough', samples: 0, maxSamples: this.maxSamples, progress: 100, zoom: this.getZoomPercent() });
         this.tick();
     }
 
@@ -369,7 +374,7 @@ class PathTracerPreview {
             this.pathTracer.updateCamera?.();
         }
         this.renderRasterPreview();
-        this.onUpdate({ state: 'walkthrough', samples: 0, maxSamples: this.maxSamples, progress: 100 });
+        this.onUpdate({ state: 'walkthrough', samples: 0, maxSamples: this.maxSamples, progress: 100, zoom: this.getZoomPercent() });
         if (immediate) {
             this.restartPathTracing();
         } else {
@@ -380,6 +385,15 @@ class PathTracerPreview {
     onPointerDown(event) {
         if (!this.walkthroughEnabled || !this.camera) return;
         event.preventDefault();
+        this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (this.activePointers.size >= 2) {
+            const points = [...this.activePointers.values()].slice(0, 2);
+            this.pinchDistance = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
+            this.dragging = false;
+            this.pointerId = null;
+            this.stop();
+            return;
+        }
         this.dragging = true;
         this.dragButton = event.button || 0;
         this.pointerId = event.pointerId;
@@ -391,7 +405,21 @@ class PathTracerPreview {
     }
 
     onPointerMove(event) {
-        if (!this.walkthroughEnabled || !this.dragging || this.pointerId !== event.pointerId || !this.camera) return;
+        if (!this.walkthroughEnabled || !this.camera) return;
+        if (this.activePointers.has(event.pointerId)) {
+            this.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        }
+        if (this.activePointers.size >= 2) {
+            event.preventDefault();
+            const points = [...this.activePointers.values()].slice(0, 2);
+            const distance = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
+            if (this.pinchDistance > 0 && distance > 0) {
+                this.zoomBy(Math.pow(distance / this.pinchDistance, 0.72));
+            }
+            this.pinchDistance = distance;
+            return;
+        }
+        if (!this.dragging || this.pointerId !== event.pointerId) return;
         event.preventDefault();
         const dx = event.clientX - this.lastPointer.x;
         const dy = event.clientY - this.lastPointer.y;
@@ -412,6 +440,8 @@ class PathTracerPreview {
     }
 
     onPointerUp(event) {
+        this.activePointers.delete(event.pointerId);
+        if (this.activePointers.size < 2) this.pinchDistance = 0;
         if (!this.dragging || this.pointerId !== event.pointerId) return;
         this.canvas?.releasePointerCapture?.(event.pointerId);
         this.dragging = false;
@@ -422,24 +452,46 @@ class PathTracerPreview {
     onWheel(event) {
         if (!this.walkthroughEnabled || !this.camera) return;
         event.preventDefault();
-        this.stop();
-        const direction = new THREE.Vector3();
-        this.camera.getWorldDirection(direction).normalize();
-        const step = clamp(-event.deltaY * 0.0016 * Math.max(1.25, this.viewDistance), -0.85, 0.85);
-        this.camera.position.addScaledVector(direction, step);
-        this.applyCameraMove({ restartDelay: 80 });
+        this.zoomBy(Math.exp(-event.deltaY * 0.0015));
     }
 
     resetView() {
         if (!this.camera || !this.homeCameraPosition || !this.homeTarget) return;
         this.stop();
         this.camera.position.copy(this.homeCameraPosition);
+        this.camera.zoom = 1;
         this.target.copy(this.homeTarget);
         this.syncSphericalFromCamera();
         this.applyCameraMove({ immediate: true });
     }
 
-    ensureRenderer(renderScale = 1) {
+    getZoomPercent() {
+        return Math.round((this.camera?.zoom || 1) * 100);
+    }
+
+    zoomBy(factor = 1) {
+        if (!this.walkthroughEnabled || !this.camera || !Number.isFinite(factor) || factor <= 0) return this.getZoomPercent();
+        this.stop();
+        this.camera.zoom = clamp((this.camera.zoom || 1) * factor, 0.55, 3.2);
+        this.camera.updateProjectionMatrix();
+        this.camera.updateMatrixWorld(true);
+        if (this.pathTracer) {
+            this.pathTracer.camera = this.camera;
+            this.pathTracer.updateCamera?.();
+        }
+        this.renderRasterPreview();
+        this.onUpdate({
+            state: 'walkthrough',
+            samples: 0,
+            maxSamples: this.maxSamples,
+            progress: 100,
+            zoom: this.getZoomPercent()
+        });
+        this.queuePathTraceRestart(180);
+        return this.getZoomPercent();
+    }
+
+    ensureRenderer(renderScale = 1, outputWidth = 1280) {
         if (!this.canvas) throw new Error('Preview canvas not found');
         if (!this.renderer) {
             this.renderer = new THREE.WebGLRenderer({
@@ -457,8 +509,9 @@ class PathTracerPreview {
 
         const rect = this.canvas.getBoundingClientRect();
         const aspect = rect.width > 0 && rect.height > 0 ? rect.width / rect.height : 16 / 9;
-        const width = Math.max(1280, Math.round(rect.width || 1280));
-        const height = Math.max(720, Math.round(width / aspect));
+        const minimumWidth = clamp(outputWidth || 1280, 640, 1920);
+        const width = Math.max(minimumWidth, Math.round(rect.width || minimumWidth));
+        const height = Math.max(Math.round(minimumWidth / (16 / 9)), Math.round(width / aspect));
         this.renderer.setPixelRatio(1);
         this.renderer.setSize(width, height, false);
         if (this.pathTracer) {
@@ -527,8 +580,8 @@ class PathTracerPreview {
     async render(snapshot, options = {}) {
         this.stop();
         this.finalDataUrl = null;
-        const renderScale = clamp(options.renderScale == null ? 1 : options.renderScale, 0.85, 1);
-        const { width, height } = this.ensureRenderer(renderScale);
+        const renderScale = clamp(options.renderScale == null ? 1 : options.renderScale, 0.65, 1);
+        const { width, height } = this.ensureRenderer(renderScale, options.outputWidth);
         this.maxSamples = Math.max(8, Math.round(options.samples || DEFAULT_SAMPLES));
         this.scene = await buildScene(snapshot);
         this.camera = buildCamera(snapshot, width / height);
@@ -544,7 +597,7 @@ class PathTracerPreview {
         this.pathTracer = new WebGLPathTracer(this.renderer);
         this.pathTracer.tiles.set(1, 1);
         this.pathTracer.bounces = Math.max(4, Math.round(options.bounces || 8));
-        this.pathTracer.transmissiveBounces = 4;
+        this.pathTracer.transmissiveBounces = Math.max(1, Math.round(options.transmissiveBounces || 4));
         // Keep glossy reflections physically intact. A strong firefly clamp makes
         // chrome, glass and glazed ceramic look flat even after convergence.
         this.pathTracer.filterGlossyFactor = 0.2;
@@ -553,7 +606,8 @@ class PathTracerPreview {
         this.pathTracer.fadeDuration = 60;
         this.pathTracer.dynamicLowRes = false;
         this.pathTracer.lowResScale = 0.45;
-        this.pathTracer.textureSize.set(2048, 2048);
+        const textureSize = clamp(options.textureSize || 2048, 512, 2048);
+        this.pathTracer.textureSize.set(textureSize, textureSize);
 
         this.onUpdate({ state: 'building', samples: 0, maxSamples: this.maxSamples, progress: 0 });
         this.pathTracer.setScene(this.scene, this.camera);

@@ -27,6 +27,7 @@
         this.pathPreview = null;
         this.pathPreviewScriptPromise = null;
         this.libraryDrawerOpen = false;
+        this.mobileInspectorExplicit = false;
         this.interactionFx = {
             canvas: null,
             context: null,
@@ -80,6 +81,10 @@
     bindEditorCallbacks() {
         this.editor2d.onSelect = cabinet => {
             this.showPropPanel(cabinet);
+            if (cabinet && this.editor2d.lastPlacementAdjusted) {
+                this.editor2d.lastPlacementAdjusted = false;
+                this.showToast('落点已有同层模块，已自动错开放置');
+            }
             // Selection can be cleared from the 2D editor after a delete. Mirror it
             // into 3D so stale outline meshes never remain in the rendered space.
             if (this.scene3d && this.scene3d.selectedCabinetId !== (cabinet?.id || null)) {
@@ -129,7 +134,7 @@
 
     canUseLibraryDrawer() {
         return window.matchMedia(
-            '(min-width: 681px) and (max-width: 860px), (orientation: landscape) and (max-height: 560px) and (max-width: 1180px)'
+            '(max-width: 860px), (orientation: landscape) and (max-height: 560px) and (max-width: 1180px)'
         ).matches;
     }
 
@@ -155,13 +160,18 @@
         document.getElementById('btn-path-preview-close')?.addEventListener('click', () => this.closePathTracingPreview());
         document.getElementById('btn-path-preview-save')?.addEventListener('click', () => this.savePathTracingPreview());
         document.getElementById('btn-path-preview-walk')?.addEventListener('click', () => this.enterClientWalkthrough());
+        document.getElementById('btn-path-preview-zoom-out')?.addEventListener('click', () => this.zoomPathPreview(1 / 1.2));
+        document.getElementById('btn-path-preview-zoom-in')?.addEventListener('click', () => this.zoomPathPreview(1.2));
+        document.getElementById('btn-path-preview-zoom-reset')?.addEventListener('click', () => this.resetPathPreviewView());
         document.getElementById('btn-path-preview-webgl')?.addEventListener('click', () => this.exportCurrentSceneImage());
         document.getElementById('btn-library-toggle')?.addEventListener('click', () => this.toggleLibraryDrawer());
+        document.getElementById('btn-dock-plans')?.addEventListener('click', () => this.openPlanLibrary());
         document.getElementById('library-drawer-scrim')?.addEventListener('click', () => this.toggleLibraryDrawer(false));
         window.addEventListener('resize', () => {
             if (!this.canUseLibraryDrawer()) {
                 this.toggleLibraryDrawer(false, { force: true });
             }
+            this.showPropPanel(this.editor2d?.selectedCabinet || null);
         });
 
         document.querySelectorAll('.tab-btn').forEach(button => {
@@ -274,7 +284,43 @@
         document.getElementById('btn-delete').addEventListener('click', () => {
             this.editor2d.deleteCabinet(this.editor2d.selectedCabinet);
         });
-        document.getElementById('btn-close-prop').addEventListener('click', () => this.editor2d.deselect());
+        document.getElementById('btn-close-prop').addEventListener('click', () => {
+            if (this.isCompactDevice() && this.mobileInspectorExplicit && this.editor2d.selectedCabinet) {
+                this.mobileInspectorExplicit = false;
+                this.showPropPanel(this.editor2d.selectedCabinet);
+                return;
+            }
+            this.editor2d.deselect();
+        });
+
+        document.getElementById('btn-mobile-selection-close')?.addEventListener('click', () => this.editor2d.deselect());
+        document.getElementById('btn-mobile-properties')?.addEventListener('click', () => {
+            if (!this.editor2d.selectedCabinet) return;
+            this.mobileInspectorExplicit = true;
+            this.showPropPanel(this.editor2d.selectedCabinet);
+        });
+        document.getElementById('btn-mobile-snap')?.addEventListener('click', () => {
+            const cabinet = this.editor2d.selectedCabinet;
+            if (!cabinet) return;
+            this.editor2d.snapToWall(cabinet);
+            this.showToast('已靠到最近墙面');
+        });
+        document.getElementById('btn-mobile-rotate')?.addEventListener('click', () => {
+            const cabinet = this.editor2d.selectedCabinet;
+            if (!cabinet) return;
+            this.editor2d.rotateCabinet(cabinet);
+            this.updatePropPanel(cabinet);
+        });
+        document.getElementById('btn-mobile-duplicate')?.addEventListener('click', () => {
+            const copy = this.editor2d.duplicateCabinet(this.editor2d.selectedCabinet);
+            if (copy) this.showToast('已复制模块');
+        });
+        document.getElementById('btn-mobile-delete')?.addEventListener('click', () => {
+            this.editor2d.deleteCabinet(this.editor2d.selectedCabinet);
+        });
+        document.getElementById('btn-mobile-placement-cancel')?.addEventListener('click', () => {
+            if (this.editor2d.cancelPlacement()) this.showToast('已取消放置');
+        });
 
         ['prop-width', 'prop-depth', 'prop-height', 'prop-elevation'].forEach(id => {
             document.getElementById(id).addEventListener('change', event => {
@@ -315,7 +361,11 @@
         document.getElementById('btn-export-json').addEventListener('click', () => this.exportProject());
         document.getElementById('file-import').addEventListener('change', event => this.importProject(event));
         document.getElementById('btn-plan-library-close').addEventListener('click', () => this.closePlanLibrary());
+        document.getElementById('btn-plan-new').addEventListener('click', () => this.newProject());
         document.getElementById('btn-plan-save-as').addEventListener('click', () => this.saveAsPlan());
+        document.getElementById('btn-plan-save-current').addEventListener('click', () => {
+            if (this.save(false)) this.renderPlanLibrary();
+        });
         document.getElementById('plan-library-list').addEventListener('click', event => this.handlePlanLibraryAction(event));
         document.getElementById('plan-library').addEventListener('click', event => {
             if (event.target === event.currentTarget) this.closePlanLibrary();
@@ -831,14 +881,34 @@
         }
         const enabled = this.pathPreview.enableWalkthrough?.(!this.pathPreview.walkthroughEnabled);
         const button = document.getElementById('btn-path-preview-walk');
+        document.getElementById('path-preview')?.classList.toggle('is-walkthrough', Boolean(enabled));
         if (button) {
             button.classList.toggle('active', Boolean(enabled));
+            button.setAttribute('aria-pressed', String(Boolean(enabled)));
+            button.setAttribute('aria-label', enabled ? '结束高清漫游' : '开启高清漫游');
+            button.setAttribute('title', enabled ? '结束高清漫游' : '开启高清漫游');
             const label = button.querySelector('span');
             if (label) label.textContent = enabled ? '结束漫游' : '高清漫游';
         }
         this.showToast(enabled
-            ? '高清漫游已开启：在预览图里拖拽转方向，滚轮推进/后退，双击重置'
+            ? '高清漫游已开启：拖拽转向，双指或 +/- 缩放'
             : '已结束高清漫游，返回最终成片');
+    }
+
+    zoomPathPreview(factor) {
+        if (!this.pathPreview?.walkthroughEnabled) {
+            this.showToast('请先开启高清漫游');
+            return;
+        }
+        this.pathPreview.zoomBy?.(factor);
+    }
+
+    resetPathPreviewView() {
+        if (!this.pathPreview?.walkthroughEnabled) {
+            this.showToast('请先开启高清漫游');
+            return;
+        }
+        this.pathPreview.resetView?.();
     }
 
     exitShowroom(switchBack = true) {
@@ -963,7 +1033,9 @@
                 this.selectedModelVariantByModule[module.id] = modelVariantId;
                 this.editor2d.setPlacementModule(module.id, modelVariantId);
                 this.toggleLibraryDrawer(false);
-                this.showToast(`在平面图点击位置放置：${displayName}`);
+                this.showToast(this.isCompactDevice()
+                    ? `在平面图按住拖到位置，松手放置：${displayName}`
+                    : `在平面图点击位置放置：${displayName}`);
             };
             item.addEventListener('click', addModule);
             item.addEventListener('keydown', event => {
@@ -1203,10 +1275,36 @@
         if (window.lucide) window.lucide.createIcons();
     }
 
+    updateMobileSelectionDock(cabinet, visible = Boolean(cabinet)) {
+        const dock = document.getElementById('mobile-selection-dock');
+        if (!dock) return;
+        dock.hidden = !visible;
+        document.body.classList.toggle('has-mobile-selection', visible);
+        if (!cabinet || !visible) return;
+        const footprint = this.editor2d.getFootprint(cabinet);
+        const label = document.getElementById('mobile-selected-label');
+        if (label) label.textContent = `${this.getCabinetDisplayName(cabinet)} · ${this.formatSize(footprint.width, footprint.depth)}`;
+    }
+
     showPropPanel(cabinet) {
         const inspector = document.getElementById('prop-panel');
         const overview = document.getElementById('overview-panel');
         const selection = document.getElementById('selection-panel');
+        const compact = this.isCompactDevice();
+        if (!cabinet) this.mobileInspectorExplicit = false;
+        const showMobileDock = compact && Boolean(cabinet) && !this.mobileInspectorExplicit;
+        this.updateMobileSelectionDock(cabinet, showMobileDock);
+
+        if (compact && !this.mobileInspectorExplicit) {
+            document.querySelector('.workspace')?.classList.remove('is-inspector-open');
+            inspector.classList.remove('has-selection');
+            overview.hidden = false;
+            selection.hidden = true;
+            if (cabinet) this.updatePropPanel(cabinet);
+            this.updateSelectionMeta();
+            return;
+        }
+
         document.querySelector('.workspace')?.classList.toggle('is-inspector-open', Boolean(cabinet));
         inspector.classList.toggle('has-selection', Boolean(cabinet));
         overview.hidden = Boolean(cabinet);
@@ -1340,6 +1438,13 @@
         const wallButton = document.getElementById('btn-tool-wall');
         const floorButton = document.getElementById('btn-tool-floor');
         const wallMaterialButton = document.getElementById('btn-tool-wall-material');
+        const placementDock = document.getElementById('mobile-placement-dock');
+        const placementLabel = document.getElementById('mobile-placement-label');
+        if (placementDock) placementDock.hidden = !pendingModuleId;
+        if (placementLabel && pendingModuleId) {
+            const module = findCabinetModule(pendingModuleId);
+            placementLabel.textContent = `正在放置：${module?.name || '模块'}`;
+        }
         if (!selectButton || !panButton) return;
         selectButton.classList.toggle('active', mode === 'select');
         panButton.classList.toggle('active', mode === 'pan');
@@ -1571,6 +1676,7 @@
         this.activePlanId = null;
         this.planRepository.setActive(null);
         this.save(true, { createNew: true });
+        this.closePlanLibrary();
         document.getElementById('project-menu').hidden = true;
         this.showToast('已创建空白方案');
     }
@@ -1693,7 +1799,8 @@
                     <time>${updatedAt}</time>
                 </div>
                 <div class="plan-library-actions">
-                    ${isCurrent ? '<span class="plan-current-badge">当前</span>' : `<button class="secondary-btn plan-open-btn" type="button" data-plan-action="open" data-plan-id="${escape(plan.id)}">打开</button>`}
+                    <button class="secondary-btn plan-open-btn" type="button" data-plan-action="open" data-plan-id="${escape(plan.id)}">${isCurrent ? '继续编辑' : '打开'}</button>
+                    <button class="icon-btn plan-export-btn" type="button" data-plan-action="export" data-plan-id="${escape(plan.id)}" title="导出方案" aria-label="导出方案"><i data-lucide="download"></i></button>
                     <button class="icon-btn plan-delete-btn" type="button" data-plan-action="delete" data-plan-id="${escape(plan.id)}" title="删除方案"><i data-lucide="trash-2"></i></button>
                 </div>
             </article>`;
@@ -1706,6 +1813,7 @@
         if (!button) return;
         const { planAction, planId } = button.dataset;
         if (planAction === 'open') this.openArchivedPlan(planId);
+        if (planAction === 'export') this.exportArchivedPlan(planId);
         if (planAction === 'delete') this.deleteArchivedPlan(planId);
     }
 
@@ -1740,6 +1848,17 @@
         }
         this.renderPlanLibrary();
         this.showToast('方案已删除');
+    }
+
+    async exportArchivedPlan(id) {
+        const record = this.planRepository.get(id);
+        if (!record) {
+            this.showToast('该方案已不存在');
+            this.renderPlanLibrary();
+            return;
+        }
+        const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+        await this.downloadBlob(blob, `${String(record.name || '厨卫方案').replace(/[\\/:*?"<>|]/g, '-')}.json`, '方案');
     }
 
     saveAsPlan() {
@@ -1842,8 +1961,12 @@
 
             const snapshot = scene.createPathTracingSnapshot();
             if (!snapshot.meshes?.length) throw new Error('没有可用于高清预览的场景几何');
+            const compactPreview = this.isCompactDevice();
+            const previewProfile = compactPreview
+                ? { samples: 96, bounces: 5, renderScale: 0.72, outputWidth: 960, textureSize: 1024, transmissiveBounces: 2 }
+                : { samples: 1024, bounces: 8, renderScale: 1, outputWidth: 1280, textureSize: 2048, transmissiveBounces: 4 };
             this.showPathPreview();
-            this.updatePathPreviewStatus({ state: 'building', samples: 0, maxSamples: 1024, progress: 0 });
+            this.updatePathPreviewStatus({ state: 'building', samples: 0, maxSamples: previewProfile.samples, progress: 0 });
             const canvas = document.getElementById('path-preview-canvas');
             this.pathPreview?.dispose?.();
             this.pathPreview = new window.PathTracerPreview({
@@ -1851,11 +1974,7 @@
                 onUpdate: status => this.updatePathPreviewStatus(status)
             });
             this.hideRenderOverlay();
-            await this.pathPreview.render(snapshot, {
-                samples: 1024,
-                bounces: 8,
-                renderScale: 1
-            });
+            await this.pathPreview.render(snapshot, previewProfile);
         } catch (error) {
             console.warn('光追预览失败，回退 WebGL 现场图:', error);
             this.hideRenderOverlay();
@@ -1884,7 +2003,7 @@
                 return;
             }
             const script = document.createElement('script');
-            script.src = 'js/vendor/pathtracer-preview.bundle.js?v=20260801-hd-quality-v8';
+            script.src = 'js/vendor/pathtracer-preview.bundle.js?v=20260801-mobile-walk-zoom-v1';
             script.defer = true;
             script.dataset.pathtracerPreview = 'true';
             script.addEventListener('load', () => resolve(), { once: true });
@@ -1898,6 +2017,8 @@
         this.resetPathPreviewWalkthrough();
         const overlay = document.getElementById('path-preview');
         if (!overlay) return;
+        const zoomLabel = document.getElementById('path-preview-zoom-label');
+        if (zoomLabel) zoomLabel.textContent = '100%';
         overlay.hidden = false;
         overlay.classList.add('active');
         if (window.lucide) window.lucide.createIcons();
@@ -1914,17 +2035,23 @@
 
     resetPathPreviewWalkthrough() {
         this.pathPreview?.enableWalkthrough?.(false);
+        document.getElementById('path-preview')?.classList.remove('is-walkthrough');
         const walkButton = document.getElementById('btn-path-preview-walk');
         if (walkButton) {
             walkButton.classList.remove('active');
+            walkButton.setAttribute('aria-pressed', 'false');
+            walkButton.setAttribute('aria-label', '开启高清漫游');
+            walkButton.setAttribute('title', '开启高清漫游');
             const label = walkButton.querySelector('span');
             if (label) label.textContent = '高清漫游';
         }
     }
 
-    updatePathPreviewStatus({ state = 'building', samples = 0, maxSamples = 1024, progress = 0 } = {}) {
+    updatePathPreviewStatus({ state = 'building', samples = 0, maxSamples = 1024, progress = 0, zoom = null } = {}) {
         const label = document.getElementById('path-preview-status');
         const note = document.getElementById('path-preview-note');
+        const zoomLabel = document.getElementById('path-preview-zoom-label');
+        if (zoomLabel && Number.isFinite(zoom)) zoomLabel.textContent = `${Math.round(zoom)}%`;
         if (!label) return;
         const shownSamples = Number.isInteger(samples) ? samples : samples.toFixed(1);
         if (state === 'building') {
@@ -1935,10 +2062,10 @@
             if (note) note.textContent = '正在准备光追着色器';
         } else if (state === 'walkthrough') {
             label.textContent = '漫游预览';
-            if (note) note.textContent = '实时漫游：拖拽转方向，滚轮推进/后退；返回成片可继续保存最终渲染';
+            if (note) note.textContent = '实时漫游：拖拽转方向，双指或 +/- 缩放；返回成片可继续保存最终渲染';
         } else if (state === 'stable') {
             label.textContent = '现场成片';
-            if (note) note.textContent = '1024 samples 已收敛；此图按原始分辨率保存，高清漫游为实时预览';
+            if (note) note.textContent = `${maxSamples} samples 已收敛；此图按当前设备优化分辨率保存，高清漫游为实时预览`;
         } else if (state === 'done') {
             label.textContent = shownSamples + '/' + maxSamples + ' samples';
             if (note) note.textContent = '采样完成，正在生成原始分辨率成片';
@@ -2032,6 +2159,12 @@
         const filesystem = this.getFilesystemPlugin();
         if (!filesystem) return false;
         try {
+            if (typeof filesystem.checkPermissions === 'function' && typeof filesystem.requestPermissions === 'function') {
+                const current = await filesystem.checkPermissions();
+                if (current?.publicStorage === 'prompt' || current?.publicStorage === 'prompt-with-rationale') {
+                    await filesystem.requestPermissions();
+                }
+            }
             const options = {
                 path: `木序厨卫设计/${folder}/${filename}`,
                 data,
@@ -2073,9 +2206,9 @@
             reader.readAsDataURL(blob);
         });
 
-        if (await this.saveNativeFile(filename, data, folder, isText ? 'utf8' : null)) return;
+        if (await this.saveNativeFile(filename, data, folder, isText ? 'utf8' : null)) return true;
 
-        if (await this.shareBlob(blob, filename)) return;
+        if (await this.shareBlob(blob, filename)) return true;
 
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -2087,6 +2220,7 @@
         document.body.removeChild(link);
         window.setTimeout(() => URL.revokeObjectURL(url), 1000);
         this.showToast('文件已导出');
+        return true;
     }
 
     showToast(message) {

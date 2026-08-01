@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kitchen-designer-v23-mobile-release';
+const CACHE_NAME = 'kitchen-designer-v25-mobile-files-plans';
 const ASSETS = [
     './',
     './index.html',

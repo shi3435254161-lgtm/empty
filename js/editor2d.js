@@ -21,6 +21,10 @@ class Editor2D {
         this.dragOffset = { x: 0, y: 0 };
         this.panStart = { x: 0, y: 0, offsetX: 0, offsetY: 0 };
         this.dragStartSnapshot = null;
+        this.touchDragCandidate = null;
+        this.touchPlacementActive = false;
+        this.touchDragThreshold = 12;
+        this.lastPlacementAdjusted = false;
         this.scale = 100;
         this.minScale = 30;
         this.maxScale = 240;
@@ -54,7 +58,8 @@ class Editor2D {
 
     resize(shouldFit = false) {
         const container = this.canvas.parentElement;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches;
+        const dpr = Math.min(window.devicePixelRatio || 1, coarsePointer ? 1.5 : 2);
         this.viewportWidth = Math.max(1, container.clientWidth);
         this.viewportHeight = Math.max(1, container.clientHeight);
         this.canvas.style.width = `${this.viewportWidth}px`;
@@ -147,6 +152,7 @@ class Editor2D {
         this.pendingModuleId = null;
         this.pendingModelVariantId = null;
         this.hoverPoint = null;
+        this.touchPlacementActive = false;
         this.draw();
         if (this.onModeChange) this.onModeChange({ mode: this.mode, pendingModuleId: null });
         return true;
@@ -168,9 +174,11 @@ class Editor2D {
         this.canvas.addEventListener('touchstart', event => {
             event.preventDefault();
             if (event.touches.length === 1) {
-                this.handleStart(event.touches[0]);
+                this.handleStart(event.touches[0], { isTouch: true });
             } else if (event.touches.length === 2) {
-                this.isDragging = false;
+                if (this.isDragging) this.handleEnd({ isTouch: true });
+                this.touchDragCandidate = null;
+                this.touchPlacementActive = false;
                 this.lastPinchDist = this.getTouchDistance(event.touches);
             }
         }, { passive: false });
@@ -178,7 +186,7 @@ class Editor2D {
         this.canvas.addEventListener('touchmove', event => {
             event.preventDefault();
             if (event.touches.length === 1) {
-                this.handleMove(event.touches[0]);
+                this.handleMove(event.touches[0], { isTouch: true });
             } else if (event.touches.length === 2) {
                 this.handlePinch(event.touches);
             }
@@ -186,8 +194,13 @@ class Editor2D {
 
         this.canvas.addEventListener('touchend', event => {
             event.preventDefault();
-            if (event.touches.length === 0) this.handleEnd();
+            if (event.touches.length === 0) this.handleEnd({ isTouch: true });
             this.lastPinchDist = null;
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchcancel', event => {
+            event.preventDefault();
+            this.cancelTouchInteraction();
         }, { passive: false });
 
         this.canvas.addEventListener('wheel', event => {
@@ -246,6 +259,40 @@ class Editor2D {
         };
     }
 
+    cabinetOverlapsAt(cabinet, x, y, ignoredCabinet = null) {
+        const footprint = this.getFootprint(cabinet);
+        const layer = this.getCollisionLayer(cabinet);
+        return this.cabinets.some(other => {
+            if (other === ignoredCabinet || this.getCollisionLayer(other) !== layer) return false;
+            const otherFootprint = this.getFootprint(other);
+            return x < other.x + otherFootprint.width &&
+                x + footprint.width > other.x &&
+                y < other.y + otherFootprint.depth &&
+                y + footprint.depth > other.y;
+        });
+    }
+
+    findAvailablePosition(cabinet, x, y, ignoredCabinet = null) {
+        const preferred = this.clampCabinetPosition(cabinet, x, y);
+        if (!this.cabinetOverlapsAt(cabinet, preferred.x, preferred.y, ignoredCabinet)) return preferred;
+
+        // New modules should not land on top of the previous module. Search a
+        // compact ring around the requested point, while respecting the same
+        // floor/wall/counter collision layer used by the visual collision aid.
+        const footprint = this.getFootprint(cabinet);
+        const spacing = Math.max(this.gridStep, Math.min(footprint.width, footprint.depth) + 80);
+        for (let radius = 1; radius <= 12; radius += 1) {
+            for (let dx = -radius; dx <= radius; dx += 1) {
+                for (let dy = -radius; dy <= radius; dy += 1) {
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
+                    const candidate = this.clampCabinetPosition(cabinet, x + dx * spacing, y + dy * spacing);
+                    if (!this.cabinetOverlapsAt(cabinet, candidate.x, candidate.y, ignoredCabinet)) return candidate;
+                }
+            }
+        }
+        return preferred;
+    }
+
     getFootprint(cabinet) {
         const quarterTurn = Math.round((cabinet.rotation || 0) / 90) % 2 !== 0;
         return quarterTurn
@@ -293,7 +340,16 @@ class Editor2D {
         return hits[0].cabinet;
     }
 
-    handleStart(event) {
+    cancelTouchInteraction() {
+        this.touchDragCandidate = null;
+        this.touchPlacementActive = false;
+        if (this.isDragging) this.handleEnd({ isTouch: true });
+        this.isPanning = false;
+        this.canvas.classList.remove('dragging');
+        this.canvas.style.cursor = this.getCursorForMode();
+    }
+
+    handleStart(event, { isTouch = false } = {}) {
         const point = this.getCanvasPoint(event);
         if (event.button === 1 || event.button === 2 || event.shiftKey || this.mode === 'pan') {
             this.isPanning = true;
@@ -319,6 +375,13 @@ class Editor2D {
         }
 
         if (this.pendingModuleId) {
+            if (isTouch) {
+                this.touchPlacementActive = true;
+                this.hoverPoint = point;
+                this.canvas.classList.add('dragging');
+                this.draw();
+                return;
+            }
             const cabinet = this.placePendingModule(point);
             if (cabinet) this.selectCabinet(cabinet);
             return;
@@ -328,15 +391,21 @@ class Editor2D {
         this.selectCabinet(cabinet);
         if (!cabinet) return;
 
-        this.isDragging = true;
-        this.dragStartSnapshot = this.captureSnapshot();
         const x = this.offsetX + (cabinet.x / 1000) * this.scale;
         const y = this.offsetY + (cabinet.y / 1000) * this.scale;
-        this.dragOffset = { x: point.x - x, y: point.y - y };
+        const dragOffset = { x: point.x - x, y: point.y - y };
+        if (isTouch) {
+            this.touchDragCandidate = { cabinet, startPoint: point, dragOffset };
+            return;
+        }
+
+        this.isDragging = true;
+        this.dragStartSnapshot = this.captureSnapshot();
+        this.dragOffset = dragOffset;
         this.canvas.classList.add('dragging');
     }
 
-    handleMove(event) {
+    handleMove(event, { isTouch = false } = {}) {
         const point = this.getCanvasPoint(event);
         this.hoverPoint = point;
         if (this.isPanning) {
@@ -350,6 +419,17 @@ class Editor2D {
             this.canvas.style.cursor = 'crosshair';
             this.draw();
             return;
+        }
+
+        if (isTouch && this.touchDragCandidate && !this.isDragging) {
+            const dx = point.x - this.touchDragCandidate.startPoint.x;
+            const dy = point.y - this.touchDragCandidate.startPoint.y;
+            if (Math.hypot(dx, dy) < this.touchDragThreshold) return;
+            this.isDragging = true;
+            this.dragStartSnapshot = this.captureSnapshot();
+            this.dragOffset = this.touchDragCandidate.dragOffset;
+            this.touchDragCandidate = null;
+            this.canvas.classList.add('dragging');
         }
 
         if (this.isDrawingWall && this.draftWall) {
@@ -382,7 +462,25 @@ class Editor2D {
         this.draw();
     }
 
-    handleEnd() {
+    handleEnd({ isTouch = false } = {}) {
+        if (isTouch && this.touchPlacementActive) {
+            const point = this.hoverPoint;
+            this.touchPlacementActive = false;
+            this.canvas.classList.remove('dragging');
+            if (this.pendingModuleId && point) {
+                const cabinet = this.placePendingModule(point);
+                if (cabinet) this.selectCabinet(cabinet);
+            }
+            return;
+        }
+
+        if (isTouch && this.touchDragCandidate) {
+            this.touchDragCandidate = null;
+            this.canvas.classList.remove('dragging');
+            this.canvas.style.cursor = this.getCursorForMode();
+            return;
+        }
+
         if (this.isPanning) {
             this.isPanning = false;
             this.canvas.classList.remove('dragging');
@@ -439,8 +537,15 @@ class Editor2D {
         if (!cabinet) return;
         this.recordHistory();
         const footprint = this.getFootprint(cabinet);
-        cabinet.x = Math.max(0, Math.round((this.roomWidth * 1000 - footprint.width) / 2 / this.gridStep) * this.gridStep);
-        cabinet.y = Math.max(0, Math.round((this.roomLength * 1000 - footprint.depth) / 2 / this.gridStep) * this.gridStep);
+        const requested = this.clampCabinetPosition(
+            cabinet,
+            (this.roomWidth * 1000 - footprint.width) / 2,
+            (this.roomLength * 1000 - footprint.depth) / 2
+        );
+        const placed = this.findAvailablePosition(cabinet, requested.x, requested.y);
+        cabinet.x = placed.x;
+        cabinet.y = placed.y;
+        this.lastPlacementAdjusted = placed.x !== requested.x || placed.y !== requested.y;
         this.cabinets.push(cabinet);
         this.selectCabinet(cabinet);
         this.emitUpdate();
@@ -452,9 +557,11 @@ class Editor2D {
         this.recordHistory();
         const roomPoint = this.getRoomPoint(point);
         const footprint = this.getFootprint(cabinet);
-        const placed = this.clampCabinetPosition(cabinet, roomPoint.x - footprint.width / 2, roomPoint.y - footprint.depth / 2);
+        const requested = this.clampCabinetPosition(cabinet, roomPoint.x - footprint.width / 2, roomPoint.y - footprint.depth / 2);
+        const placed = this.findAvailablePosition(cabinet, requested.x, requested.y);
         cabinet.x = placed.x;
         cabinet.y = placed.y;
+        this.lastPlacementAdjusted = placed.x !== requested.x || placed.y !== requested.y;
         this.cabinets.push(cabinet);
         this.pendingModuleId = null;
         this.pendingModelVariantId = null;
@@ -471,8 +578,9 @@ class Editor2D {
         if (!copy) return null;
         Object.assign(copy, this.serializeCabinet(cabinet), { id: Date.now() + Math.random() });
         const footprint = this.getFootprint(copy);
-        copy.x = Math.min(Math.max(0, this.roomWidth * 1000 - footprint.width), cabinet.x + 100);
-        copy.y = Math.min(Math.max(0, this.roomLength * 1000 - footprint.depth), cabinet.y + 100);
+        const placed = this.findAvailablePosition(copy, cabinet.x + 100, cabinet.y + 100, cabinet);
+        copy.x = placed.x;
+        copy.y = placed.y;
         this.cabinets.push(copy);
         this.selectCabinet(copy);
         this.emitUpdate();
