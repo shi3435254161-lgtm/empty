@@ -33,6 +33,8 @@
             downloadId: null,
             phase: 'idle',
             pollTimer: null,
+            checkPromise: null,
+            automaticCheckTimer: null,
             progress: null,
             message: ''
         };
@@ -84,6 +86,8 @@
             window.setTimeout(() => this.openTutorial(), 350);
         }
         this.finishInitialLoad();
+        this.clearNativePwaCache();
+        this.scheduleAutomaticAppUpdateCheck();
     }
 
     bindEditorCallbacks() {
@@ -2167,6 +2171,45 @@
         return updater && typeof updater.checkForUpdate === 'function' ? updater : null;
     }
 
+    isNativeApp() {
+        const capacitor = window.Capacitor;
+        return Boolean(capacitor && typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform());
+    }
+
+    async clearNativePwaCache() {
+        if (!this.isNativeApp()) return;
+
+        // Native builds bundle their own web files. Remove leftovers from an older PWA
+        // registration without touching localStorage, where the user's plans live.
+        try {
+            const tasks = [];
+            if ('serviceWorker' in navigator && typeof navigator.serviceWorker.getRegistrations === 'function') {
+                tasks.push(navigator.serviceWorker.getRegistrations().then(registrations =>
+                    Promise.all(registrations.map(registration => registration.unregister()))
+                ));
+            }
+            if ('caches' in window && typeof window.caches.keys === 'function') {
+                tasks.push(window.caches.keys().then(keys => Promise.all(keys.map(key => window.caches.delete(key)))));
+            }
+            await Promise.all(tasks);
+        } catch (error) {
+            console.warn('清理原生端旧网页缓存失败', error);
+        }
+    }
+
+    scheduleAutomaticAppUpdateCheck() {
+        const updater = this.getAppUpdaterPlugin();
+        if (!updater || this.appUpdate.automaticCheckTimer || this.appUpdate.checkPromise) return;
+
+        this.appUpdate.automaticCheckTimer = window.setTimeout(async () => {
+            this.appUpdate.automaticCheckTimer = null;
+            await this.checkAppUpdate(updater);
+            if (['available', 'pending', 'downloading', 'downloaded'].includes(this.appUpdate.phase)) {
+                document.getElementById('app-update').hidden = false;
+            }
+        }, 1000);
+    }
+
     async openAppUpdate() {
         const updater = this.getAppUpdaterPlugin();
         if (!updater) {
@@ -2189,39 +2232,49 @@
         if (dialog) dialog.hidden = true;
     }
 
-    async checkAppUpdate(updater = this.getAppUpdaterPlugin()) {
-        if (!updater) return;
+    checkAppUpdate(updater = this.getAppUpdaterPlugin()) {
+        if (!updater) return Promise.resolve();
+        if (this.appUpdate.checkPromise) return this.appUpdate.checkPromise;
+
         this.stopAppUpdatePolling();
         this.appUpdate.phase = 'checking';
         this.appUpdate.message = '正在检查 GitHub 上的最新版本...';
         this.appUpdate.progress = null;
         this.renderAppUpdate();
-        try {
-            const release = await updater.checkForUpdate();
-            this.appUpdate.release = release;
-            this.appUpdate.downloadId = null;
-            if (!release.updateAvailable) {
-                this.appUpdate.phase = 'current';
-                this.appUpdate.message = '已是最新版本';
-                this.renderAppUpdate();
-                return;
-            }
 
-            const status = await updater.getDownloadStatus();
-            const matchingDownload = status && status.assetUrl && status.assetUrl === release.assetUrl;
-            if (matchingDownload && ['pending', 'paused', 'downloading', 'downloaded'].includes(status.status)) {
-                this.applyAppUpdateDownloadStatus(status);
-                return;
+        const request = (async () => {
+            try {
+                const release = await updater.checkForUpdate();
+                this.appUpdate.release = release;
+                this.appUpdate.downloadId = null;
+                if (!release.updateAvailable) {
+                    this.appUpdate.phase = 'current';
+                    this.appUpdate.message = '已是最新版本';
+                    this.renderAppUpdate();
+                    return;
+                }
+
+                const status = await updater.getDownloadStatus();
+                const matchingDownload = status && status.assetUrl && status.assetUrl === release.assetUrl;
+                if (matchingDownload && ['pending', 'paused', 'downloading', 'downloaded'].includes(status.status)) {
+                    this.applyAppUpdateDownloadStatus(status);
+                    return;
+                }
+                this.appUpdate.phase = 'available';
+                this.appUpdate.message = `发现 ${release.latestVersion}，可在 App 内直接下载并安装`;
+                this.renderAppUpdate();
+            } catch (error) {
+                console.warn('应用更新检查失败', error);
+                this.appUpdate.phase = 'error';
+                this.appUpdate.message = error?.message || '检查更新失败，请稍后重试';
+                this.renderAppUpdate();
             }
-            this.appUpdate.phase = 'available';
-            this.appUpdate.message = `发现 ${release.latestVersion}，可在 App 内直接下载并安装`;
-            this.renderAppUpdate();
-        } catch (error) {
-            console.warn('应用更新检查失败', error);
-            this.appUpdate.phase = 'error';
-            this.appUpdate.message = error?.message || '检查更新失败，请稍后重试';
-            this.renderAppUpdate();
-        }
+        })();
+
+        this.appUpdate.checkPromise = request;
+        return request.finally(() => {
+            if (this.appUpdate.checkPromise === request) this.appUpdate.checkPromise = null;
+        });
     }
 
     async handleAppUpdateAction() {

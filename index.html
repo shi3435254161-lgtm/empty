@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#1f2421">
     <meta name="description" content="沟厢品尚装修公司厨卫空间设计与 3D 预览工具">
     <title>沟厢品尚装修公司 · 厨卫设计</title>
-    <link rel="stylesheet" href="css/style.css?v=20260803-cloud-update-v1">
+    <link rel="stylesheet" href="css/style.css?v=20260803-cloud-update-v2">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -574,9 +574,15 @@
     <script src="js/cabinet.js?v=20260801-licensed-assets-only-v1"></script>
     <script src="js/editor2d.js?v=20260801-mobile-touch-v2"></script>
     <script src="js/scene3d.js?v=20260801-ambientcg-pbr-v2"></script>
-    <script src="js/app.js?v=20260803-cloud-update-v1"></script>
+    <script src="js/app.js?v=20260803-cloud-update-v2"></script>
     <script>
+        const isNativeCapacitor = Boolean(
+            window.Capacitor &&
+            typeof window.Capacitor.isNativePlatform === 'function' &&
+            window.Capacitor.isNativePlatform()
+        );
         const canUseServiceWorker =
+            !isNativeCapacitor &&
             'serviceWorker' in navigator &&
             window.isSecureContext &&
             location.protocol !== 'file:' &&
