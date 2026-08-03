@@ -37,20 +37,39 @@ jobs:
           npm run build:android-web
           npx cap sync android
 
-      - name: Build APK
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          printf %s "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android/keystore.properties
+
+      - name: Build signed APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
       - name: Prepare release artifact
         run: |
           mkdir -p release
-          cp android/app/build/outputs/apk/debug/app-debug.apk "release/kitchen-designer-${GITHUB_REF_NAME}-debug.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "release/kitchen-designer-${GITHUB_REF_NAME}.apk"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ github.ref_name }} Android test build
+          name: ${{ github.ref_name }} Android release
           generate_release_notes: true
-          files: release/kitchen-designer-${{ github.ref_name }}-debug.apk
+          files: release/kitchen-designer-${{ github.ref_name }}.apk

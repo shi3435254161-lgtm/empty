@@ -28,6 +28,14 @@
         this.pathPreviewScriptPromise = null;
         this.libraryDrawerOpen = false;
         this.mobileInspectorExplicit = false;
+        this.appUpdate = {
+            release: null,
+            downloadId: null,
+            phase: 'idle',
+            pollTimer: null,
+            progress: null,
+            message: ''
+        };
         this.interactionFx = {
             canvas: null,
             context: null,
@@ -154,6 +162,13 @@
         document.getElementById('btn-redo').addEventListener('click', () => this.editor2d.redo());
         document.getElementById('btn-save').addEventListener('click', () => this.save(false));
         document.getElementById('btn-help').addEventListener('click', () => this.openTutorial());
+        document.getElementById('btn-app-update')?.addEventListener('click', () => this.openAppUpdate());
+        document.getElementById('btn-app-update-close')?.addEventListener('click', () => this.closeAppUpdate());
+        document.getElementById('btn-app-update-dismiss')?.addEventListener('click', () => this.closeAppUpdate());
+        document.getElementById('btn-app-update-action')?.addEventListener('click', () => this.handleAppUpdateAction());
+        document.getElementById('app-update')?.addEventListener('click', event => {
+            if (event.target === event.currentTarget) this.closeAppUpdate();
+        });
         document.getElementById('btn-preview-render').addEventListener('click', () => this.openPathTracingPreview());
         document.getElementById('btn-showroom').addEventListener('click', () => this.enterShowroom());
         document.getElementById('btn-export').addEventListener('click', () => this.exportImage());
@@ -2141,6 +2156,250 @@
             if (button) button.disabled = false;
             this.hideRenderOverlay();
         }
+    }
+
+    getAppUpdaterPlugin() {
+        const capacitor = window.Capacitor;
+        if (!capacitor || typeof capacitor.isNativePlatform !== 'function' || !capacitor.isNativePlatform()) {
+            return null;
+        }
+        const updater = capacitor.Plugins && capacitor.Plugins.AppUpdater;
+        return updater && typeof updater.checkForUpdate === 'function' ? updater : null;
+    }
+
+    async openAppUpdate() {
+        const updater = this.getAppUpdaterPlugin();
+        if (!updater) {
+            this.showToast('应用内更新仅在安卓 App 中可用');
+            return;
+        }
+        document.getElementById('project-menu').hidden = true;
+        document.getElementById('btn-project-menu').setAttribute('aria-expanded', 'false');
+        document.getElementById('app-update').hidden = false;
+        this.appUpdate.phase = 'checking';
+        this.appUpdate.message = '正在检查 GitHub 上的最新版本...';
+        this.appUpdate.progress = null;
+        this.renderAppUpdate();
+        await this.checkAppUpdate(updater);
+    }
+
+    closeAppUpdate() {
+        this.stopAppUpdatePolling();
+        const dialog = document.getElementById('app-update');
+        if (dialog) dialog.hidden = true;
+    }
+
+    async checkAppUpdate(updater = this.getAppUpdaterPlugin()) {
+        if (!updater) return;
+        this.stopAppUpdatePolling();
+        this.appUpdate.phase = 'checking';
+        this.appUpdate.message = '正在检查 GitHub 上的最新版本...';
+        this.appUpdate.progress = null;
+        this.renderAppUpdate();
+        try {
+            const release = await updater.checkForUpdate();
+            this.appUpdate.release = release;
+            this.appUpdate.downloadId = null;
+            if (!release.updateAvailable) {
+                this.appUpdate.phase = 'current';
+                this.appUpdate.message = '已是最新版本';
+                this.renderAppUpdate();
+                return;
+            }
+
+            const status = await updater.getDownloadStatus();
+            const matchingDownload = status && status.assetUrl && status.assetUrl === release.assetUrl;
+            if (matchingDownload && ['pending', 'paused', 'downloading', 'downloaded'].includes(status.status)) {
+                this.applyAppUpdateDownloadStatus(status);
+                return;
+            }
+            this.appUpdate.phase = 'available';
+            this.appUpdate.message = `发现 ${release.latestVersion}，可在 App 内直接下载并安装`;
+            this.renderAppUpdate();
+        } catch (error) {
+            console.warn('应用更新检查失败', error);
+            this.appUpdate.phase = 'error';
+            this.appUpdate.message = error?.message || '检查更新失败，请稍后重试';
+            this.renderAppUpdate();
+        }
+    }
+
+    async handleAppUpdateAction() {
+        if (this.appUpdate.phase === 'checking' || this.appUpdate.phase === 'downloading' || this.appUpdate.phase === 'pending') {
+            return;
+        }
+        if (this.appUpdate.phase === 'current') {
+            this.closeAppUpdate();
+            return;
+        }
+        if (this.appUpdate.phase === 'downloaded') {
+            await this.installAppUpdate();
+            return;
+        }
+        if (this.appUpdate.phase === 'error' || !this.appUpdate.release) {
+            await this.checkAppUpdate();
+            return;
+        }
+        await this.downloadAppUpdate();
+    }
+
+    async downloadAppUpdate() {
+        const updater = this.getAppUpdaterPlugin();
+        const release = this.appUpdate.release;
+        if (!updater || !release) return;
+        try {
+            this.appUpdate.phase = 'starting-download';
+            this.appUpdate.message = '正在交给系统下载管理器...';
+            this.renderAppUpdate();
+            const result = await updater.downloadUpdate({
+                assetUrl: release.assetUrl,
+                assetName: release.assetName,
+                latestVersion: release.latestVersion
+            });
+            if (result?.permissionRequired) {
+                this.appUpdate.phase = 'permission';
+                this.appUpdate.message = '已打开系统设置。请允许此 App 安装未知应用，返回后再次点击下载。';
+                this.renderAppUpdate();
+                return;
+            }
+            this.appUpdate.downloadId = result.downloadId;
+            this.appUpdate.phase = 'downloading';
+            this.appUpdate.message = '正在下载更新包...';
+            this.appUpdate.progress = { downloadedBytes: 0, totalBytes: Number(release.assetSize || 0) };
+            this.renderAppUpdate();
+            this.pollAppUpdateDownload();
+        } catch (error) {
+            console.warn('应用更新下载失败', error);
+            this.appUpdate.phase = 'failed';
+            this.appUpdate.message = error?.message || '无法开始下载，请重试';
+            this.renderAppUpdate();
+        }
+    }
+
+    async pollAppUpdateDownload() {
+        this.stopAppUpdatePolling();
+        const updater = this.getAppUpdaterPlugin();
+        if (!updater || !this.appUpdate.downloadId) return;
+        try {
+            const status = await updater.getDownloadStatus({ downloadId: this.appUpdate.downloadId });
+            this.applyAppUpdateDownloadStatus(status);
+            if (['pending', 'paused', 'downloading'].includes(status?.status)) {
+                this.appUpdate.pollTimer = window.setTimeout(() => this.pollAppUpdateDownload(), 750);
+            }
+        } catch (error) {
+            console.warn('读取更新下载状态失败', error);
+            this.appUpdate.phase = 'failed';
+            this.appUpdate.message = error?.message || '下载状态读取失败，请重新下载';
+            this.renderAppUpdate();
+        }
+    }
+
+    applyAppUpdateDownloadStatus(status) {
+        if (!status) return;
+        this.appUpdate.downloadId = status.downloadId || this.appUpdate.downloadId;
+        this.appUpdate.progress = {
+            downloadedBytes: Number(status.downloadedBytes || 0),
+            totalBytes: Number(status.totalBytes || this.appUpdate.release?.assetSize || 0)
+        };
+        if (status.status === 'downloaded') {
+            this.stopAppUpdatePolling();
+            this.appUpdate.phase = 'downloaded';
+            this.appUpdate.message = `${this.appUpdate.release?.latestVersion || '新版本'} 已下载完成，可立即安装`;
+        } else if (status.status === 'failed' || status.status === 'missing') {
+            this.stopAppUpdatePolling();
+            this.appUpdate.phase = 'failed';
+            this.appUpdate.message = status.status === 'missing' ? '更新文件不存在，请重新下载' : '下载失败，请重新下载';
+        } else {
+            this.appUpdate.phase = status.status === 'pending' ? 'pending' : 'downloading';
+            this.appUpdate.message = status.status === 'paused' ? '下载已暂停，等待网络恢复...' : '正在下载更新包...';
+        }
+        this.renderAppUpdate();
+    }
+
+    async installAppUpdate() {
+        const updater = this.getAppUpdaterPlugin();
+        if (!updater || !this.appUpdate.downloadId) return;
+        try {
+            this.appUpdate.phase = 'installing';
+            this.appUpdate.message = '正在打开系统安装器...';
+            this.renderAppUpdate();
+            const result = await updater.installUpdate({ downloadId: this.appUpdate.downloadId });
+            if (result?.permissionRequired) {
+                this.appUpdate.phase = 'permission-install';
+                this.appUpdate.message = '请在系统设置中允许安装未知应用，返回后点击安装。';
+            } else {
+                this.appUpdate.phase = 'install-started';
+                this.appUpdate.message = '系统安装器已打开，完成安装后重新进入 App 即可。';
+            }
+            this.renderAppUpdate();
+        } catch (error) {
+            console.warn('启动更新安装失败', error);
+            this.appUpdate.phase = 'downloaded';
+            this.appUpdate.message = error?.message || '无法打开系统安装器，请重试';
+            this.renderAppUpdate();
+        }
+    }
+
+    stopAppUpdatePolling() {
+        window.clearTimeout(this.appUpdate?.pollTimer);
+        if (this.appUpdate) this.appUpdate.pollTimer = null;
+    }
+
+    renderAppUpdate() {
+        const state = this.appUpdate;
+        const action = document.getElementById('btn-app-update-action');
+        const status = document.getElementById('app-update-status');
+        const currentVersion = document.getElementById('app-update-current-version');
+        const latestVersion = document.getElementById('app-update-latest-version');
+        const notes = document.getElementById('app-update-notes');
+        const progressBar = document.getElementById('app-update-progress-bar');
+        const progressText = document.getElementById('app-update-progress-text');
+        if (!action || !status || !currentVersion || !latestVersion || !notes || !progressBar || !progressText) return;
+
+        const release = state.release || {};
+        currentVersion.textContent = release.currentVersion || '--';
+        latestVersion.textContent = release.latestVersion || '--';
+        status.textContent = state.message || '准备检查更新';
+        const releaseNotes = String(release.releaseNotes || '').trim().replace(/\s+/g, ' ');
+        notes.textContent = releaseNotes ? releaseNotes.slice(0, 420) : '本次版本包含体验优化与问题修复。';
+
+        const downloaded = Number(state.progress?.downloadedBytes || 0);
+        const total = Number(state.progress?.totalBytes || release.assetSize || 0);
+        const percent = total > 0 ? Math.max(0, Math.min(100, Math.round((downloaded / total) * 100))) : 0;
+        const isDownloading = ['starting-download', 'pending', 'downloading'].includes(state.phase);
+        progressBar.style.width = `${isDownloading || state.phase === 'downloaded' ? (state.phase === 'downloaded' ? 100 : percent) : 0}%`;
+        progressText.textContent = isDownloading && total > 0
+            ? `${percent}% · ${this.formatAppUpdateSize(downloaded)} / ${this.formatAppUpdateSize(total)}`
+            : state.phase === 'downloaded'
+                ? `已完成 · ${this.formatAppUpdateSize(total)}`
+                : '';
+
+        const labels = {
+            checking: '正在检查',
+            current: '完成',
+            available: '下载更新',
+            permission: '授权后重新下载',
+            'starting-download': '准备下载',
+            pending: '等待下载',
+            downloading: '正在下载',
+            failed: '重新下载',
+            downloaded: '立即安装',
+            installing: '正在打开安装器',
+            'permission-install': '授权后安装',
+            'install-started': '已打开安装器',
+            error: '重新检查'
+        };
+        action.querySelector('span').textContent = labels[state.phase] || '检查更新';
+        action.disabled = ['checking', 'starting-download', 'pending', 'downloading', 'installing', 'install-started'].includes(state.phase);
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    formatAppUpdateSize(bytes) {
+        const value = Number(bytes || 0);
+        if (!Number.isFinite(value) || value <= 0) return '0 MB';
+        if (value >= 1024 * 1024 * 1024) return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+        if (value >= 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+        return `${Math.max(1, Math.round(value / 1024))} KB`;
     }
 
     safeProjectName() {

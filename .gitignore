@@ -9,6 +9,7 @@ qa-final.png
 *.aab
 *.jks
 *.keystore
+android/keystore.properties
 
 # Legacy duplicated web copies; css/ and js/ are the maintained sources.
 /app.js

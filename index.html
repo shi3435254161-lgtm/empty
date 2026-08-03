@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#1f2421">
     <meta name="description" content="沟厢品尚装修公司厨卫空间设计与 3D 预览工具">
     <title>沟厢品尚装修公司 · 厨卫设计</title>
-    <link rel="stylesheet" href="css/style.css?v=20260801-mobile-download-plan-v1">
+    <link rel="stylesheet" href="css/style.css?v=20260803-cloud-update-v1">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -68,6 +68,7 @@
                         <button id="btn-new" type="button"><i data-lucide="file-plus-2"></i>新建方案</button>
                         <button id="btn-reference-kitchen" type="button"><i data-lucide="layout-template"></i>亮白实景样板</button>
                         <button id="btn-plan-library" type="button"><i data-lucide="folder-open"></i>方案库</button>
+                        <button id="btn-app-update" type="button"><i data-lucide="cloud-download"></i>检查应用更新</button>
                         <button id="btn-import" type="button"><i data-lucide="file-up"></i>导入方案</button>
                         <button id="btn-export-json" type="button"><i data-lucide="file-down"></i>导出方案</button>
                     </div>
@@ -463,6 +464,38 @@
         </section>
     </div>
 
+    <div id="app-update" class="app-update-backdrop" hidden>
+        <section class="app-update-dialog" role="dialog" aria-modal="true" aria-labelledby="app-update-title">
+            <header class="app-update-header">
+                <div class="app-update-mark" aria-hidden="true"><i data-lucide="cloud-download"></i></div>
+                <div class="app-update-heading">
+                    <span class="eyebrow">ANDROID APP</span>
+                    <h2 id="app-update-title">应用更新</h2>
+                </div>
+                <button id="btn-app-update-close" class="icon-btn" type="button" title="关闭更新窗口" aria-label="关闭更新窗口"><i data-lucide="x"></i></button>
+            </header>
+            <div class="app-update-body">
+                <p id="app-update-status" class="app-update-status" role="status">正在检查最新版本...</p>
+                <div class="app-update-versions" aria-label="版本信息">
+                    <div><span>当前版本</span><strong id="app-update-current-version">--</strong></div>
+                    <div><span>最新版本</span><strong id="app-update-latest-version">--</strong></div>
+                </div>
+                <div class="app-update-progress" aria-live="polite">
+                    <div><i id="app-update-progress-bar"></i></div>
+                    <span id="app-update-progress-text"></span>
+                </div>
+                <section class="app-update-notes" aria-labelledby="app-update-notes-title">
+                    <h3 id="app-update-notes-title">更新说明</h3>
+                    <p id="app-update-notes">正在读取更新说明...</p>
+                </section>
+            </div>
+            <footer class="app-update-actions">
+                <button id="btn-app-update-dismiss" class="secondary-btn" type="button">稍后再说</button>
+                <button id="btn-app-update-action" class="primary-btn" type="button"><i data-lucide="download"></i><span>检查更新</span></button>
+            </footer>
+        </section>
+    </div>
+
     <div id="path-preview" class="path-preview" hidden>
         <section class="path-preview-panel" role="dialog" aria-modal="true" aria-labelledby="path-preview-title">
             <header class="path-preview-head">
@@ -541,7 +574,7 @@
     <script src="js/cabinet.js?v=20260801-licensed-assets-only-v1"></script>
     <script src="js/editor2d.js?v=20260801-mobile-touch-v2"></script>
     <script src="js/scene3d.js?v=20260801-ambientcg-pbr-v2"></script>
-    <script src="js/app.js?v=20260801-mobile-download-plan-v1"></script>
+    <script src="js/app.js?v=20260803-cloud-update-v1"></script>
     <script>
         const canUseServiceWorker =
             'serviceWorker' in navigator &&
