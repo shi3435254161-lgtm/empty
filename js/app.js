@@ -996,6 +996,7 @@
                 ? `<label class="module-variant">
                         <span>款式</span>
                         <select aria-label="${displayName}款式">
+                            ${module.preferParametric ? '<option value="">标准嵌入结构</option>' : ''}
                             ${variants.map(variant => `<option value="${variant.id}">${variant.name}${variant.license ? ` · ${variant.license}` : ''}${variant.ready ? '' : ' · 待导入'}</option>`).join('')}
                         </select>
                     </label>`
@@ -1028,7 +1029,7 @@
             const addModule = () => {
                 if (this.is3DView) this.switchView(false);
                 const modelVariantId = variantSelect
-                    ? variantSelect.value
+                    ? variantSelect.value || null
                     : this.selectedModelVariantByModule[module.id] || null;
                 this.selectedModelVariantByModule[module.id] = modelVariantId;
                 this.editor2d.setPlacementModule(module.id, modelVariantId);
@@ -1698,7 +1699,7 @@
             place('base-drawer', 0, 1250, null, { rotation: 90 }),
             place('base-drawer', 3420, 650, null, { rotation: 90 }),
             place('base-double', 3420, 1250, null, { rotation: 90 }),
-            place('sink-double', 20, 60, 'sf-kitchen-sink-504248ed-normalized'),
+            place('sink-double', 20, 60),
             place('cooktop-premium', 1600, 65),
             place('range-hood-side', 1530, 45),
             // Keep the hood clear of the wall-cabinet collision layer while

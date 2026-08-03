@@ -46,6 +46,7 @@ const modelAssets = [
   { moduleId: "decor-window-wide", id: "ph-roller-window-02", polyId: "rollershutter_window_02", name: "CC0 Roller Shutter Window 02", resolution: "2k" },
   { moduleId: "decor-window-wide", id: "ph-roller-window-03", polyId: "rollershutter_window_03", name: "CC0 Roller Shutter Window 03", resolution: "2k" },
   { moduleId: "decor-plant-tall", id: "ph-potted-plant-01", polyId: "potted_plant_01", name: "CC0 Potted Plant 01", resolution: "1k" },
+  { moduleId: "decor-towel-basket", id: "ph-wicker-basket-02", polyId: "wicker_basket_02", name: "CC0 带盖藤编收纳篮", resolution: "1k" },
   { moduleId: "decor-tea-set", id: "ph-tea-set-01", polyId: "tea_set_01", name: "CC0 茶具套装", resolution: "1k" }
 ];
 

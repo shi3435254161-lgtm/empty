@@ -28,10 +28,17 @@ function makeMaterial(data = {}, map = null) {
         emissive[0] + emissive[1] + emissive[2] > 0.04 ? 1.6 : 0
     );
 
+    // The preview scene intentionally uses a compact light rig instead of an HDRI.
+    // Fully metallic PBR values therefore turn black because there is little to
+    // reflect. Retain the metallic cue while keeping the selected finish visible.
+    const requestedMetalness = clamp(data.metalness || 0, 0, 1);
+    const previewMetalness = requestedMetalness > 0.04
+        ? Math.min(0.42, requestedMetalness * 0.38)
+        : 0;
     const material = new THREE.MeshPhysicalMaterial({
         color: colorFromArray(data.color),
         roughness: clamp(data.roughness == null ? 0.62 : data.roughness, 0.02, 1),
-        metalness: clamp(data.metalness || 0, 0, 1),
+        metalness: previewMetalness,
         transmission: transparent ? clamp(requestedTransmission, 0, 0.28) : clamp(requestedTransmission, 0, 0.6),
         thickness: transparent ? 0.03 : 0,
         ior: clamp(data.ior || 1.45, 1, 2.4),

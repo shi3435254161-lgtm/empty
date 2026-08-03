@@ -318,10 +318,10 @@ const CABINET_MODULES = {
         },
         {
             id: 'bath-towel-rack',
-            name: '毛巾架',
+            name: '双层毛巾架（真实模型）',
             width: 620,
-            depth: 90,
-            height: 260,
+            depth: 100,
+            height: 175,
             mountType: 'wall',
             color: '#c0c0c0'
         },
@@ -646,7 +646,10 @@ const MODULE_APPEARANCE = {
         materialKind: 'metal',
         preview: 'sink-single',
         description: '单槽',
-        finishName: '不锈钢'
+        finishName: '不锈钢',
+        // A standalone sink must sit inside a cabinet top. Keep the reviewed
+        // imported asset as an explicit option instead of replacing this fit.
+        preferParametric: true
     },
     'sink-double': {
         color: '#b7c1c3',
@@ -654,7 +657,8 @@ const MODULE_APPEARANCE = {
         materialKind: 'metal',
         preview: 'sink-double',
         description: '双槽',
-        finishName: '不锈钢'
+        finishName: '不锈钢',
+        preferParametric: true
     },
     fridge: {
         color: '#d9dee2',
@@ -940,6 +944,13 @@ function registerAdditionalModules() {
     ]);
 
     addCabinetModules('appliance', [
+        { id: 'fridge-french-door-real', name: '法式多门冰箱（真实模型）', width: 860, depth: 680, height: 1820, mountType: 'floor', color: '#1e2225', preview: 'fridge-big', fridgeStyle: 'french-door', description: '四门制冰', finishName: '黑钛烤漆', modelStatus: 'real' },
+        { id: 'fridge-french-door', name: '法式多门冰箱（参数化）', width: 860, depth: 680, height: 1820, mountType: 'floor', color: '#d8dde0', preview: 'fridge-big', fridgeStyle: 'french-door', description: '四门底置冷冻', finishName: '银灰金属', modelStatus: 'parametric' },
+        { id: 'fridge-side-by-side', name: '对开门制冰冰箱（参数化）', width: 920, depth: 700, height: 1780, mountType: 'floor', color: '#2e3438', preview: 'fridge-big', fridgeStyle: 'side-by-side', description: '深灰对开门', finishName: '石墨金属', modelStatus: 'parametric' },
+        { id: 'fridge-retro', name: '复古窄体冰箱（参数化）', width: 560, depth: 620, height: 1660, mountType: 'floor', color: '#dce5df', preview: 'fridge', fridgeStyle: 'retro', description: '小户型独立式', finishName: '雾绿烤漆', modelStatus: 'parametric' },
+        { id: 'oven-built-in-real', name: '嵌入式烤箱（真实模型）', width: 600, depth: 550, height: 600, mountType: 'floor', color: '#202224', preview: 'oven', description: '黑玻璃嵌入烤箱', finishName: '黑晶玻璃/拉丝金属', modelStatus: 'real' },
+        { id: 'oven-bosch-real', name: 'Bosch 嵌入式烤箱（真实模型）', width: 600, depth: 550, height: 600, mountType: 'floor', color: '#e3e5e5', preview: 'oven', description: '触控银灰嵌入烤箱', finishName: '银灰金属/黑晶玻璃', modelStatus: 'real' },
+        { id: 'dishwasher-compact-real', name: '紧凑洗碗机（真实模型）', width: 450, depth: 550, height: 820, mountType: 'floor', color: '#303438', preview: 'dishwasher', description: '拉丝金属窄体洗碗机', finishName: '深灰拉丝金属', modelStatus: 'real' },
         { id: 'steam-oven', name: '蒸烤一体机', width: 600, depth: 550, height: 455, mountType: 'floor', color: '#26282a', preview: 'oven', description: '嵌入电器', finishName: '黑晶玻璃' },
         { id: 'sterilizer', name: '消毒柜', width: 600, depth: 520, height: 620, mountType: 'floor', color: '#dfe4e4', preview: 'dishwasher', description: '餐具消毒', finishName: '银灰嵌入' },
         { id: 'counter-microwave', name: '台面微波炉', width: 520, depth: 390, height: 310, mountType: 'counter', color: '#25282a', preview: 'microwave', description: '台面电器', finishName: '黑玻璃' },
@@ -978,6 +989,7 @@ function registerAdditionalModules() {
         { id: 'bath-glass-partition', name: '玻璃隔断', width: 900, depth: 80, height: 2000, mountType: 'floor', color: '#b8d0d6', preview: 'shower-room', description: '干湿分离', finishName: '超白玻璃' },
         { id: 'bath-wall-niche', name: '壁龛', width: 600, depth: 140, height: 400, mountType: 'wall', color: '#d8d0c0', preview: 'open-shelf', openShelves: 2, description: '墙体收纳', finishName: '暖瓷砖' },
         { id: 'bath-heated-rack', name: '电热毛巾架', width: 600, depth: 110, height: 900, mountType: 'wall', color: '#c0c0c0', preview: 'towel-rack', description: '加热烘干', finishName: '金属银' },
+        { id: 'bath-towel-shelf', name: '带置物架毛巾杆（真实模型）', width: 620, depth: 320, height: 300, mountType: 'wall', color: '#c2c6c6', preview: 'towel-rack', fixtureKind: 'towel-rack', description: '置物收纳五金', finishName: '拉丝不锈钢', modelStatus: 'real' },
         { id: 'bath-tall-storage', name: '浴室高柜', width: 420, depth: 380, height: 1800, mountType: 'floor', color: '#d9c6aa', preview: 'door', doorCount: 1, description: '卫浴收纳', finishName: '浅橡木' },
         { id: 'bath-toilet-toto', name: '智能马桶（参数化）', width: 430, depth: 720, height: 760, mountType: 'floor', color: '#fbfbf7', preview: 'toilet', fixtureKind: 'toilet', description: '智能一体', finishName: '亮白陶瓷', modelStatus: 'parametric' },
         { id: 'bath-toilet-kohler', name: '连体马桶（参数化）', width: 450, depth: 710, height: 790, mountType: 'floor', color: '#f7f7f4', preview: 'toilet', fixtureKind: 'toilet', description: '连体虹吸', finishName: '釉面陶瓷', modelStatus: 'parametric' },
@@ -999,12 +1011,13 @@ function registerAdditionalModules() {
     addCabinetModules('decor', [
         { id: 'decor-plant-tall', name: '高绿植盆栽', width: 420, depth: 420, height: 1500, mountType: 'floor', color: '#4f7f58', preview: 'plant', fixtureKind: 'plant', description: '提升现场感', finishName: '陶盆绿植' },
         { id: 'decor-plant-counter', name: '台面小花盆', width: 220, depth: 220, height: 360, mountType: 'counter', color: '#6f9b65', preview: 'plant', fixtureKind: 'plant', description: '台面点缀', finishName: '白陶盆' },
+        { id: 'decor-makeup-mirror', name: '金色台式美容镜（真实模型）', width: 360, depth: 160, height: 460, mountType: 'counter', color: '#b89545', preview: 'mirror', fixtureKind: 'makeup-mirror', description: '台面化妆软装', finishName: '拉丝金属/银镜', modelStatus: 'real' },
         { id: 'decor-window-wide', name: '采光窗', width: 1200, depth: 90, height: 1100, mountType: 'wall', color: '#dcecff', preview: 'window', fixtureKind: 'window', description: '补充自然光', finishName: '断桥铝窗' },
         { id: 'decor-curtain-sheer', name: '白纱窗帘', width: 1300, depth: 80, height: 2100, mountType: 'wall', color: '#f6f7f6', preview: 'curtain', fixtureKind: 'curtain', description: '柔化光线', finishName: '透光白纱' },
         { id: 'decor-curtain-double', name: '双层窗帘', width: 1500, depth: 120, height: 2200, mountType: 'wall', color: '#d9d2c8', preview: 'curtain', fixtureKind: 'curtain', description: '布帘+纱帘', finishName: '亚麻米灰' },
         { id: 'decor-wall-art', name: '装饰挂画', width: 650, depth: 40, height: 520, mountType: 'wall', color: '#f4efe6', preview: 'wall-art', fixtureKind: 'wall-art', description: '墙面软装', finishName: '浅木框' },
         { id: 'decor-bath-mat', name: '浴室地垫', width: 720, depth: 460, height: 18, mountType: 'floor', color: '#d8e0e2', preview: 'mat', fixtureKind: 'mat', description: '脚感软装', finishName: '浅灰织物' },
-        { id: 'decor-towel-basket', name: '毛巾收纳篮', width: 360, depth: 300, height: 420, mountType: 'floor', color: '#b8956b', preview: 'basket', fixtureKind: 'basket', description: '卫浴陈列', finishName: '藤编收纳' },
+        { id: 'decor-towel-basket', name: '带盖藤编收纳篮（CC0 实物）', width: 360, depth: 300, height: 420, mountType: 'floor', color: '#b8956b', preview: 'basket', fixtureKind: 'basket', description: '卫浴毛巾收纳', finishName: '天然藤编', modelStatus: 'real' },
         { id: 'decor-plant-areca', name: 'CC0 散尾葵盆栽', width: 620, depth: 620, height: 1650, mountType: 'floor', color: '#3d7650', preview: 'plant', fixtureKind: 'plant', description: 'Poly Haven 实景模型', finishName: '绿植+陶盆' },
         { id: 'decor-plant-fiddle', name: 'CC0 琴叶榕盆栽', width: 560, depth: 560, height: 1450, mountType: 'floor', color: '#477a4d', preview: 'plant', fixtureKind: 'plant', description: 'Poly Haven 实景模型', finishName: '阔叶绿植' },
         { id: 'decor-plant-succulent', name: 'CC0 多肉盆栽', width: 300, depth: 300, height: 340, mountType: 'counter', color: '#66946e', preview: 'plant', fixtureKind: 'plant', description: 'Poly Haven 实景模型', finishName: '多肉陶盆' },

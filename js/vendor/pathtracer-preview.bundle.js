@@ -41914,10 +41914,12 @@ bool bvhIntersectFogVolumeHit(
           data.emissiveIntensity || 0,
           emissive[0] + emissive[1] + emissive[2] > 0.04 ? 1.6 : 0
         );
+        const requestedMetalness = clamp2(data.metalness || 0, 0, 1);
+        const previewMetalness = requestedMetalness > 0.04 ? Math.min(0.42, requestedMetalness * 0.38) : 0;
         const material = new MeshPhysicalMaterial({
           color: colorFromArray(data.color),
           roughness: clamp2(data.roughness == null ? 0.62 : data.roughness, 0.02, 1),
-          metalness: clamp2(data.metalness || 0, 0, 1),
+          metalness: previewMetalness,
           transmission: transparent ? clamp2(requestedTransmission, 0, 0.28) : clamp2(requestedTransmission, 0, 0.6),
           thickness: transparent ? 0.03 : 0,
           ior: clamp2(data.ior || 1.45, 1, 2.4),

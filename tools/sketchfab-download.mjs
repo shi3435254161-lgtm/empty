@@ -59,7 +59,7 @@ const candidates = [
   asset("dishwasher", "dishwasher-built-in", "嵌入式洗碗机", "88a14cc94f7643eeaccd7a3006b3462b", "https://sketchfab.com/3d-models/countertop-dishwasher-built-in-88a14cc94f7643eeaccd7a3006b3462b", "nurhadimli", "CC BY 4.0"),
   asset("dishwasher", "dishwasher-ge", "不锈钢洗碗机", "f840ded0f295466392b8e2e8591e9f17", "https://sketchfab.com/3d-models/ge-built-in-dishwasher-stainless-steel-f840ded0f295466392b8e2e8591e9f17", "allenbranch", "CC BY 4.0"),
   asset("dishwasher", "dishwasher-compact", "紧凑洗碗机", "8d47d7a007f34965a93111b22274f489", "https://sketchfab.com/3d-models/compact-dishwasher-18-width-samsung-inspired-8d47d7a007f34965a93111b22274f489", "MUSHROOM_BUILDS", "CC BY 4.0"),
-  asset("oven", "oven-bosch-wall", "嵌入式烤箱", "2c46c1663590439a9edc0de3cb51dba9", "https://sketchfab.com/3d-models/bosch-built-in-wall-oven-2c46c1663590439a9edc0de3cb51dba9", "eltayerkebulan", "CC BY 4.0"),
+  asset("oven", "oven-bosch-wall", "嵌入式烤箱", "2c46c1663590439a9edc0de3cb51dba9", "https://sketchfab.com/3d-models/bosch-built-in-wall-oven-2c46c1663590439a9edc0de3cb51dba9", "eltayerkebulan", "CC BY 4.0", { rotation: 180 }),
   asset("oven", "oven-small-kitchen", "黑色烤箱", "e783d6d64f8c453ab534bdde715b210d", "https://sketchfab.com/3d-models/small-kitchen-with-oven-e783d6d64f8c453ab534bdde715b210d", "AleixoAlonso", "CC BY 4.0"),
   asset("oven", "oven-electrolux", "电烤箱", "69b8e036e0664f7988c66ff3745d210b", "https://sketchfab.com/3d-models/built-in-oven-electrolux-69b8e036e0664f7988c66ff3745d210b", "eltayerkebulan", "CC BY 4.0"),
   asset("washer", "washer-dryer", "洗烘一体机", "8358b47f171d43e98f473083ce55b36e", "https://sketchfab.com/3d-models/washer-dryer-machine-8358b47f171d43e98f473083ce55b36e", "rhcreations", "CC BY 4.0"),
@@ -80,10 +80,23 @@ const includedModules = new Set([
   "sink-double",
   "cooktop",
   "cooktop-induction",
-  "range-hood"
+  "range-hood",
+  "fridge",
+  "dishwasher",
+  "oven",
+  "washer"
 ]);
 
-const activeCandidates = candidates.filter((candidate) => includedModules.has(candidate.moduleId));
+const requestedModules = new Set(
+  String(process.env.SKETCHFAB_MODULES || "")
+    .split(",")
+    .map((moduleId) => moduleId.trim())
+    .filter(Boolean)
+);
+const activeCandidates = candidates.filter((candidate) => (
+  includedModules.has(candidate.moduleId) &&
+  (!requestedModules.size || requestedModules.has(candidate.moduleId))
+));
 
 function asset(moduleId, id, name, uid, sourceUrl, author, license, extra = {}) {
   return { moduleId, id, name, uid, sourceUrl, author, license, ...extra };

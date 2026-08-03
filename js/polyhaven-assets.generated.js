@@ -360,6 +360,22 @@ window.POLYHAVEN_MODEL_ASSETS = {
       "fitMode": "footprint"
     }
   ],
+  "decor-towel-basket": [
+    {
+      "id": "ph-wicker-basket-02",
+      "name": "CC0 带盖藤编收纳篮",
+      "ready": true,
+      "safe": true,
+      "normalized": true,
+      "sourceUrl": "https://polyhaven.com/a/wicker_basket_02",
+      "author": "Poly Haven",
+      "license": "CC0",
+      "url": "assets/models/polyhaven/ph-wicker-basket-02/model.gltf",
+      "format": "gltf",
+      "bytes": 3064509,
+      "fitMode": "footprint"
+    }
+  ],
   "decor-tea-set": [
     {
       "id": "ph-tea-set-01",

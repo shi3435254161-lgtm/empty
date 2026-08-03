@@ -76,6 +76,7 @@
     <script src="js/vendor/OrbitControls.js"></script>
     <script src="js/vendor/GLTFLoader.js"></script>
     <script src="js/vendor/meshopt_decoder.js"></script>
+    <script src="js/vendor/RGBELoader.js"></script>
     <script src="js/polyhaven-assets.generated.js?v=20260731-cc0-window-v2"></script>
     <script src="js/incoming-assets.generated.js?v=20260801-sketchfab-audit-v1"></script>
     <script src="js/model-assets.js?v=20260801-sketchfab-review-v2"></script>
@@ -112,6 +113,20 @@
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             const scene = new THREE.Scene();
             scene.background = new THREE.Color('#e9efed');
+            const pmremGenerator = new THREE.PMREMGenerator(renderer);
+            pmremGenerator.compileEquirectangularShader();
+            if (THREE.RGBELoader) {
+                new THREE.RGBELoader().load('assets/hdris/studio_small_09_2k.hdr', texture => {
+                    const environment = pmremGenerator.fromEquirectangular(texture).texture;
+                    texture.dispose();
+                    pmremGenerator.dispose();
+                    scene.environment = environment;
+                }, undefined, () => {
+                    pmremGenerator.dispose();
+                });
+            } else {
+                pmremGenerator.dispose();
+            }
             const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
             camera.position.set(3.2, 2.1, 4.6);
             const controls = new THREE.OrbitControls(camera, canvas);
@@ -239,6 +254,11 @@
             }
 
             function frameModel(model, asset) {
+                const rotation = Number(asset.rotation);
+                if (Number.isFinite(rotation) && rotation !== 0) {
+                    model.rotation.y = THREE.MathUtils.degToRad(rotation);
+                    model.updateMatrixWorld(true);
+                }
                 const bounds = new THREE.Box3().setFromObject(model);
                 const size = bounds.getSize(new THREE.Vector3());
                 const center = bounds.getCenter(new THREE.Vector3());

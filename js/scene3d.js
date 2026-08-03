@@ -1900,7 +1900,7 @@ class Scene3D {
             this.createLayoutShape(group, w, d, h, moduleId, spec);
         } else if (spec.fixtureKind === 'water-heater') {
             this.createWaterHeater(group, w, d, h, spec);
-        } else if (['plant', 'window', 'curtain', 'wall-art', 'mat', 'basket', 'vase', 'light', 'kitchen-prop'].includes(spec.fixtureKind)) {
+        } else if (['plant', 'window', 'curtain', 'wall-art', 'mat', 'basket', 'vase', 'light', 'kitchen-prop', 'makeup-mirror'].includes(spec.fixtureKind)) {
             this.createDecorFixture(group, w, d, h, spec);
         } else if (moduleId.startsWith('bath-')) {
             this.createBathroomFixture(group, w, d, h, moduleId, spec);
@@ -1914,8 +1914,12 @@ class Scene3D {
             this.createRangeHood(group, w, d, h, moduleId, spec);
         } else if (moduleId.includes('fridge')) {
             this.createFridge(group, w, d, h, moduleId, spec);
-        } else if (moduleId.includes('dishwasher')) {
+        } else if (moduleId.includes('dishwasher') || moduleId.includes('sterilizer')) {
             this.createDishwasher(group, w, d, h, spec);
+        } else if (moduleId.includes('microwave')) {
+            this.createMicrowave(group, w, d, h, spec);
+        } else if (moduleId.includes('coffee-machine')) {
+            this.createCoffeeMachine(group, w, d, h, spec);
         } else if (moduleId.includes('oven')) {
             this.createOven(group, w, d, h, spec);
         } else if (moduleId.includes('washer')) {
@@ -1934,18 +1938,23 @@ class Scene3D {
     }
 
     getExternalModelAsset(spec) {
+        if (spec.preferParametric && !spec.modelVariantId) return null;
         const assets = window.MODEL_ASSETS || {};
-        const entry = assets[spec.modelVariantId] || assets[spec.moduleId] || assets[spec.id] || null;
+        const moduleId = spec.moduleId || spec.id;
+        const selected = spec.modelVariantId;
+        const variants = typeof window.getModelVariants === 'function'
+            ? window.getModelVariants(moduleId)
+            : null;
         const isUsable = typeof window.isUsableModelAsset === 'function'
             ? window.isUsableModelAsset
             : asset => Boolean(asset && asset.ready !== false && asset.url && (asset.safe === true || asset.normalized === true));
-        if (!entry) return null;
-        if (Array.isArray(entry)) {
-            return entry.find(item => item.id === spec.modelVariantId && isUsable(item))
-                || entry.find(item => isUsable(item))
-                || null;
+        if (Array.isArray(variants)) {
+            return variants.find(item => item.id === selected)
+                || (!selected ? variants[0] || null : null);
         }
-        return isUsable(entry) ? entry : null;
+        const entry = assets[selected] || assets[moduleId] || assets[spec.id] || null;
+        if (Array.isArray(entry)) return entry.find(item => item.id === selected && isUsable(item)) || null;
+        return selected && isUsable(entry) ? entry : null;
     }
 
     attachExternalModel(group, cab, spec, targetSize) {
@@ -2013,11 +2022,14 @@ class Scene3D {
         const sourceCenter = bounds.getCenter(new THREE.Vector3());
         const target = new THREE.Vector3(targetSize.width, targetSize.height, targetSize.depth);
         const fitByFootprint = asset.fitMode === 'footprint';
-        const scale = Math.min(
-            target.x / Math.max(sourceSize.x, 0.001),
-            fitByFootprint ? Number.POSITIVE_INFINITY : target.y / Math.max(sourceSize.y, 0.001),
-            target.z / Math.max(sourceSize.z, 0.001)
-        );
+        const fitByHeight = asset.fitMode === 'height';
+        const scale = fitByHeight
+            ? target.y / Math.max(sourceSize.y, 0.001)
+            : Math.min(
+                target.x / Math.max(sourceSize.x, 0.001),
+                fitByFootprint ? Number.POSITIVE_INFINITY : target.y / Math.max(sourceSize.y, 0.001),
+                target.z / Math.max(sourceSize.z, 0.001)
+            );
 
         model.scale.setScalar(scale);
         model.position.set(
@@ -2214,20 +2226,76 @@ class Scene3D {
             const soil = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.255, w * 0.255, 0.018, 32), new THREE.MeshStandardMaterial({ color: 0x30251d, roughness: 1 }));
             soil.position.y = -h / 2 + potHeight;
             group.add(soil);
-            const leafMaterial = new THREE.MeshPhysicalMaterial({ color, roughness: 0.58, side: THREE.DoubleSide });
+            const leafColors = ['#2f6d45', '#4f9856', '#80ad45'].map(value => new THREE.Color(value));
+            const leafMaterials = leafColors.map(leafColor => new THREE.MeshStandardMaterial({
+                color: leafColor,
+                roughness: 0.72,
+                metalness: 0,
+                side: THREE.DoubleSide
+            }));
+            const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x234b32, roughness: 0.82 });
             for (let i = 0; i < 11; i += 1) {
                 const angle = (i / 11) * Math.PI * 2;
                 const stemHeight = h * (0.35 + (i % 4) * 0.08);
-                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, stemHeight, 10), dark);
+                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, stemHeight, 10), stemMaterial);
                 stem.position.set(Math.cos(angle) * w * 0.07, -h * 0.2 + stemHeight / 2, Math.sin(angle) * d * 0.07);
                 stem.rotation.z = Math.cos(angle) * 0.14;
                 group.add(stem);
-                const leaf = new THREE.Mesh(new THREE.SphereGeometry(Math.min(w, d) * 0.17, 20, 12), leafMaterial);
+                const leaf = new THREE.Mesh(new THREE.SphereGeometry(Math.min(w, d) * 0.17, 20, 12), leafMaterials[i % leafMaterials.length]);
                 leaf.scale.set(0.52, 1.15, 0.22);
                 leaf.rotation.z = angle;
                 leaf.position.set(Math.cos(angle) * w * 0.22, -h * 0.05 + stemHeight * 0.55, Math.sin(angle) * d * 0.16);
                 group.add(leaf);
             }
+            const flowering = h < 0.7 || String(spec.moduleId).includes('counter');
+            if (flowering) {
+                const flowerMaterials = [0xf07d72, 0xf0bd4e, 0xcd78a9].map(value => new THREE.MeshStandardMaterial({ color: value, roughness: 0.65 }));
+                for (let cluster = 0; cluster < 4; cluster += 1) {
+                    const angle = (cluster / 4) * Math.PI * 2 + 0.35;
+                    const cx = Math.cos(angle) * w * 0.13;
+                    const cz = Math.sin(angle) * d * 0.13;
+                    const cy = h * (0.12 + (cluster % 2) * 0.08);
+                    for (let petal = 0; petal < 5; petal += 1) {
+                        const petalAngle = (petal / 5) * Math.PI * 2;
+                        const bloom = new THREE.Mesh(new THREE.SphereGeometry(Math.min(w, d) * 0.035, 12, 8), flowerMaterials[cluster % flowerMaterials.length]);
+                        bloom.scale.set(1.3, 0.75, 0.55);
+                        bloom.position.set(cx + Math.cos(petalAngle) * w * 0.033, cy + Math.sin(petalAngle) * h * 0.018, cz);
+                        group.add(bloom);
+                    }
+                }
+            }
+        } else if (spec.fixtureKind === 'makeup-mirror') {
+            const metal = new THREE.MeshPhysicalMaterial({
+                color: new THREE.Color(spec.color || '#b89545'),
+                roughness: 0.18,
+                metalness: 0.86,
+                clearcoat: 0.48,
+                envMap: this.envMap,
+                envMapIntensity: 1.05
+            });
+            const mirror = new THREE.MeshPhysicalMaterial({
+                color: 0xc7d5dc,
+                roughness: 0.04,
+                metalness: 0.72,
+                clearcoat: 1,
+                envMap: this.envMap,
+                envMapIntensity: 1.1
+            });
+            const baseY = -h * 0.44;
+            const mirrorY = h * 0.1;
+            const stemHeight = mirrorY - baseY;
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.2, w * 0.24, h * 0.09, 36), metal);
+            base.position.y = baseY;
+            group.add(base);
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.035, w * 0.035, stemHeight, 24), metal);
+            stem.position.y = baseY + stemHeight / 2;
+            group.add(stem);
+            const mirrorFace = new THREE.Mesh(new THREE.CircleGeometry(w * 0.28, 48), mirror);
+            mirrorFace.position.set(0, mirrorY, d * 0.42);
+            group.add(mirrorFace);
+            const frame = new THREE.Mesh(new THREE.TorusGeometry(w * 0.295, w * 0.025, 12, 48), metal);
+            frame.position.set(0, mirrorY, d * 0.43);
+            group.add(frame);
         } else if (spec.fixtureKind === 'window') {
             const frame = Math.max(0.035, Math.min(w, h) * 0.055);
             const glass = new THREE.MeshPhysicalMaterial({ color: 0xcbe4ef, transparent: true, opacity: 0.32, roughness: 0.04, clearcoat: 1, envMap: this.envMap, envMapIntensity: 0.8 });
@@ -3088,21 +3156,25 @@ class Scene3D {
         const slabH = 0.046;
         const sideW = Math.max(0.018, (topW - openW) / 2);
         const sideD = Math.max(0.018, (topD - openD) / 2);
+        const includeCountertop = options.includeCountertop !== false;
 
-        this.addBox(group, sideW, slabH, topD, -openW / 2 - sideW / 2, topY, 0, countertopMaterial);
-        this.addBox(group, sideW, slabH, topD, openW / 2 + sideW / 2, topY, 0, countertopMaterial);
-        this.addBox(group, openW, slabH, sideD, 0, topY, openZ - openD / 2 - sideD / 2, countertopMaterial);
-        this.addBox(group, openW, slabH, sideD, 0, topY, openZ + openD / 2 + sideD / 2, countertopMaterial);
+        if (includeCountertop) {
+            this.addBox(group, sideW, slabH, topD, -openW / 2 - sideW / 2, topY, 0, countertopMaterial);
+            this.addBox(group, sideW, slabH, topD, openW / 2 + sideW / 2, topY, 0, countertopMaterial);
+            this.addBox(group, openW, slabH, sideD, 0, topY, openZ - openD / 2 - sideD / 2, countertopMaterial);
+            this.addBox(group, openW, slabH, sideD, 0, topY, openZ + openD / 2 + sideD / 2, countertopMaterial);
+        }
 
         const rimH = 0.022;
         const rimW = Math.max(0.024, openW * 0.075);
         const rimD = Math.max(0.022, openD * 0.075);
-        this.addBox(group, openW + rimW * 2, rimH, rimD, 0, topY + 0.034, openZ - openD / 2 - rimD / 2, sinkMaterial);
-        this.addBox(group, openW + rimW * 2, rimH, rimD, 0, topY + 0.034, openZ + openD / 2 + rimD / 2, sinkMaterial);
-        this.addBox(group, rimW, rimH, openD, -openW / 2 - rimW / 2, topY + 0.034, openZ, sinkMaterial);
-        this.addBox(group, rimW, rimH, openD, openW / 2 + rimW / 2, topY + 0.034, openZ, sinkMaterial);
+        const rimY = topY + (options.rimLift ?? 0.034);
+        this.addBox(group, openW + rimW * 2, rimH, rimD, 0, rimY, openZ - openD / 2 - rimD / 2, sinkMaterial);
+        this.addBox(group, openW + rimW * 2, rimH, rimD, 0, rimY, openZ + openD / 2 + rimD / 2, sinkMaterial);
+        this.addBox(group, rimW, rimH, openD, -openW / 2 - rimW / 2, rimY, openZ, sinkMaterial);
+        this.addBox(group, rimW, rimH, openD, openW / 2 + rimW / 2, rimY, openZ, sinkMaterial);
 
-        const basinDepth = options.compact ? 0.105 : 0.15;
+        const basinDepth = options.basinDepth || (options.compact ? 0.105 : 0.15);
         const wallT = 0.018;
         this.addBox(group, openW, basinDepth, wallT, 0, topY - basinDepth / 2 + 0.012, openZ - openD / 2, sinkMaterial);
         this.addBox(group, openW, basinDepth, wallT, 0, topY - basinDepth / 2 + 0.012, openZ + openD / 2, sinkMaterial);
@@ -3114,8 +3186,13 @@ class Scene3D {
             new THREE.BoxGeometry(openW - wallT * 2.4, 0.004, openD - wallT * 2.4),
             shadowMaterial
         );
-        innerShadow.position.set(0, topY - 0.018, openZ);
+        innerShadow.position.set(0, topY + (options.coverExistingTop ? 0.006 : -0.018), openZ);
         group.add(innerShadow);
+
+        if (options.double) {
+            this.addBox(group, wallT * 1.35, basinDepth * 0.82, openD - wallT * 2, 0, topY - basinDepth * 0.38, openZ, sinkMaterial);
+            this.addBox(group, wallT * 1.65, rimH, openD - rimD * 1.5, 0, rimY, openZ, sinkMaterial);
+        }
 
         const water = new THREE.Mesh(new THREE.BoxGeometry(openW * 0.72, 0.004, openD * 0.58), waterMaterial);
         water.position.set(0, topY - basinDepth * 0.54, openZ + openD * 0.02);
@@ -3153,10 +3230,18 @@ class Scene3D {
             });
         }
 
-        const topY = isBaseSink ? h / 2 + 0.045 : h / 2;
+        // Counter sinks are a cut-in fixture. Rendering a second countertop at
+        // the full component height makes them look like a block sitting above
+        // the cabinet rather than a bowl inserted into its existing worktop.
+        const topY = isBaseSink ? h / 2 + 0.045 : -h / 2 + 0.026;
         this.createInsetSink(group, w, d, topY, countertopColor || '#f0f0f0', {
             style: 'kitchen',
-            basinColor: spec.customColor ? spec.color : 0xbcc7c8
+            basinColor: spec.customColor ? spec.color : 0xbcc7c8,
+            includeCountertop: isBaseSink,
+            coverExistingTop: !isBaseSink,
+            rimLift: isBaseSink ? 0.034 : 0.016,
+            basinDepth: isBaseSink ? 0.15 : 0.105,
+            double: spec.moduleId === 'sink-double'
         });
         this.enableShadows(group);
     }
@@ -3710,6 +3795,7 @@ class Scene3D {
 
     createFridge(group, w, d, h, moduleId, spec = {}) {
         const isBig = moduleId.includes('big');
+        const style = spec.fridgeStyle || (isBig ? 'side-by-side' : 'bottom-freezer');
         const bodyMaterial = new THREE.MeshPhysicalMaterial({
             color: new THREE.Color(spec.color || '#d9dee2'),
             metalness: 0.36,
@@ -3721,12 +3807,28 @@ class Scene3D {
         const trim = this.createChromeMaterial(0xbec6c8);
         this.addRoundedBox(group, w, h, d, 0, 0, 0, bodyMaterial, 0.035, 10);
         const frontZ = d / 2 + 0.018;
-        if (isBig) {
+        if (style === 'french-door') {
+            [-0.25, 0.25].forEach(side => {
+                this.addRoundedBox(group, w * 0.47, h * 0.55, 0.025, side * w * 0.25, h * 0.2, frontZ, bodyMaterial, 0.018, 8);
+                this.addBox(group, 0.018, h * 0.36, 0.026, side * w * 0.16, h * 0.2, frontZ + 0.02, trim);
+            });
+            [-0.25, 0.25].forEach(side => this.addRoundedBox(group, w * 0.47, h * 0.28, 0.025, side * w * 0.25, -h * 0.24, frontZ, bodyMaterial, 0.016, 8));
+            this.addBox(group, w * 0.9, 0.012, 0.02, 0, -h * 0.07, frontZ + 0.014, new THREE.MeshStandardMaterial({ color: 0x6d777a, roughness: 0.56 }));
+        } else if (style === 'retro') {
+            const chrome = this.createChromeMaterial(0xe0e5e2);
+            this.addRoundedBox(group, w * 0.94, h * 0.2, 0.026, 0, h * 0.34, frontZ, bodyMaterial, 0.04, 12);
+            this.addRoundedBox(group, w * 0.94, h * 0.67, 0.026, 0, -h * 0.11, frontZ, bodyMaterial, 0.05, 12);
+            this.addBox(group, w * 0.6, 0.022, 0.032, 0, h * 0.16, frontZ + 0.028, chrome);
+            this.addBox(group, w * 0.62, 0.014, 0.024, 0, -h * 0.32, frontZ + 0.027, chrome);
+        } else if (style === 'side-by-side' || isBig) {
             [-0.25, 0.25].forEach(side => {
                 this.addRoundedBox(group, w * 0.48, h * 0.94, 0.024, side * w * 0.25, 0, frontZ, bodyMaterial, 0.018, 8);
                 this.addBox(group, 0.018, h * 0.52, 0.026, side * w * 0.08, h * 0.02, frontZ + 0.018, trim);
             });
             this.addBox(group, 0.01, h * 0.94, 0.02, 0, 0, frontZ + 0.012, new THREE.MeshStandardMaterial({ color: 0x778084, roughness: 0.6 }));
+            const dispenser = this.addRoundedBox(group, w * 0.16, h * 0.22, 0.024, -w * 0.22, -h * 0.04, frontZ + 0.026, this.createBlackGlassMaterial(0x0a1216), 0.012, 6);
+            dispenser.userData.pathTraceRole = 'appliance-display';
+            this.addBox(group, w * 0.09, 0.01, 0.014, -w * 0.22, -h * 0.05, frontZ + 0.042, new THREE.MeshBasicMaterial({ color: 0x8fd3df }));
         } else {
             this.addRoundedBox(group, w * 0.94, h * 0.34, 0.024, 0, h * 0.29, frontZ, bodyMaterial, 0.018, 8);
             this.addRoundedBox(group, w * 0.94, h * 0.56, 0.024, 0, -h * 0.18, frontZ, bodyMaterial, 0.018, 8);
@@ -3749,9 +3851,53 @@ class Scene3D {
         const face = this.createBlackGlassMaterial(0x07100d);
         const trim = this.createChromeMaterial(0xb4bab7);
         this.addRoundedBox(group, w, h, d, 0, 0, 0, bodyMaterial, 0.02, 8);
-        this.addRoundedBox(group, w * 0.9, h * 0.88, 0.024, 0, -h * 0.02, d / 2 + 0.018, face, 0.016, 8);
-        this.addBox(group, w * 0.72, 0.018, 0.026, 0, h * 0.38, d / 2 + 0.04, trim);
-        this.addBox(group, w * 0.78, 0.01, 0.018, 0, -h * 0.42, d / 2 + 0.038, trim);
+        const isSterilizer = String(spec.moduleId).includes('sterilizer');
+        if (isSterilizer) {
+            [0.19, -0.22].forEach(offset => this.addRoundedBox(group, w * 0.86, h * 0.34, 0.024, 0, h * offset, d / 2 + 0.018, face, 0.014, 8));
+            this.addBox(group, w * 0.7, 0.014, 0.022, 0, h * 0.4, d / 2 + 0.042, trim);
+            this.addBox(group, w * 0.7, 0.014, 0.022, 0, h * 0.0, d / 2 + 0.042, trim);
+            [-0.27, 0.27].forEach(offset => this.addBox(group, 0.015, h * 0.1, 0.02, offset * w, h * 0.39, d / 2 + 0.043, trim));
+        } else {
+            this.addRoundedBox(group, w * 0.9, h * 0.88, 0.024, 0, -h * 0.02, d / 2 + 0.018, face, 0.016, 8);
+            this.addBox(group, w * 0.72, 0.018, 0.026, 0, h * 0.38, d / 2 + 0.04, trim);
+            this.addBox(group, w * 0.78, 0.01, 0.018, 0, -h * 0.42, d / 2 + 0.038, trim);
+        }
+        this.enableShadows(group);
+    }
+
+    createMicrowave(group, w, d, h, spec = {}) {
+        const body = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(spec.color || '#1d2022'), metalness: 0.42, roughness: 0.22, clearcoat: 0.56, envMap: this.envMap, envMapIntensity: 0.72 });
+        const glass = this.createBlackGlassMaterial(0x050707);
+        const chrome = this.createChromeMaterial(0xc4cbcb);
+        this.addRoundedBox(group, w, h, d, 0, 0, 0, body, 0.025, 10);
+        this.addRoundedBox(group, w * 0.66, h * 0.66, 0.022, -w * 0.11, -h * 0.03, d / 2 + 0.02, glass, 0.016, 8);
+        const display = this.addRoundedBox(group, w * 0.16, h * 0.12, 0.014, w * 0.33, h * 0.23, d / 2 + 0.03, this.createBlackGlassMaterial(0x0d1c20), 0.008, 6);
+        display.userData.pathTraceRole = 'appliance-display';
+        [0.06, -0.07, -0.2].forEach(offset => {
+            const button = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.012, 20), chrome);
+            button.rotation.x = Math.PI / 2;
+            button.position.set(w * 0.33, h * offset, d / 2 + 0.034);
+            group.add(button);
+        });
+        this.addBox(group, w * 0.45, 0.016, 0.024, -w * 0.12, -h * 0.28, d / 2 + 0.032, chrome);
+        this.enableShadows(group);
+    }
+
+    createCoffeeMachine(group, w, d, h, spec = {}) {
+        const body = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(spec.color || '#1d2223'), metalness: 0.45, roughness: 0.2, clearcoat: 0.6, envMap: this.envMap, envMapIntensity: 0.78 });
+        const glass = this.createBlackGlassMaterial(0x050809);
+        const chrome = this.createChromeMaterial(0xc8cfcd);
+        this.addRoundedBox(group, w, h, d, 0, 0, 0, body, 0.025, 10);
+        this.addRoundedBox(group, w * 0.86, h * 0.74, 0.024, 0, -h * 0.02, d / 2 + 0.02, glass, 0.016, 8);
+        const display = this.addRoundedBox(group, w * 0.25, h * 0.1, 0.014, 0, h * 0.29, d / 2 + 0.035, this.createBlackGlassMaterial(0x092127), 0.008, 6);
+        display.userData.pathTraceRole = 'appliance-display';
+        this.addBox(group, w * 0.28, 0.02, 0.04, 0, -h * 0.08, d / 2 + 0.045, chrome);
+        [-0.1, 0.1].forEach(offset => {
+            const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, h * 0.16, 16), chrome);
+            spout.position.set(w * offset, -h * 0.21, d / 2 + 0.045);
+            group.add(spout);
+        });
+        this.addRoundedBox(group, w * 0.38, h * 0.12, d * 0.34, 0, -h * 0.33, d * 0.13, new THREE.MeshStandardMaterial({ color: 0x202626, roughness: 0.68 }), 0.012, 6);
         this.enableShadows(group);
     }
 
@@ -3913,15 +4059,19 @@ class Scene3D {
             const center = subjectBounds.getCenter(new THREE.Vector3());
             const size = subjectBounds.getSize(new THREE.Vector3());
             const targetY = THREE.MathUtils.clamp(center.y + size.y * 0.18, 0.65, 1.04);
-            // Composition follows the placed work rather than the empty room. This
-            // keeps a compact basin, toilet or appliance above the lower frame edge.
+            const cameraFov = size.length() < 1.4 ? 47 : 50;
             previewCameraTarget = [center.x, targetY, center.z];
+            // Keep the preview camera just beyond the open front of the room.
+            // Pushing a composition camera towards a subject at the rear can
+            // put it inside a side-wall volume, which renders as a black frame.
             previewCameraPosition = [
-                center.x + this.roomWidth * 0.26,
-                Math.max(1.42, targetY + Math.min(0.84, maxDimension * 0.31)),
-                this.roomLength / 2 + Math.min(0.38, this.roomLength * 0.13)
+                THREE.MathUtils.clamp(center.x + this.roomWidth * 0.26, -this.roomWidth * 0.28, this.roomWidth * 0.28),
+                Math.max(1.62, targetY + Math.min(1.14, maxDimension * 0.43)),
+                this.roomLength / 2 + Math.min(0.46, this.roomLength * 0.15)
             ];
-            previewCameraFov = size.length() < 1.4 ? 47 : 50;
+            // A wider FOV frames tall appliances without moving the camera
+            // through the room shell.
+            previewCameraFov = size.y > 1.35 ? Math.max(cameraFov, 64) : cameraFov;
         } else {
             previewCameraPosition = [
                 this.roomWidth * 0.26,
