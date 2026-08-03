@@ -50,7 +50,7 @@ jobs:
           test -n "$ANDROID_KEY_PASSWORD"
           printf %s "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
           {
-            echo "storeFile=release.keystore"
+            echo "storeFile=app/release.keystore"
             echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
             echo "keyAlias=$ANDROID_KEY_ALIAS"
             echo "keyPassword=$ANDROID_KEY_PASSWORD"
